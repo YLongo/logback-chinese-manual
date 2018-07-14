@@ -345,7 +345,7 @@ logback-classic 包含一个名叫 ViewStatusMessagesServlet 的 servlet。这�
 
 *Example*：
 
-![statusMessages](F:/project/Volong.github.io/source/_drafts/logback/images/statusMessages.png)
+![statusMessages](/images/statusMessages.png)
 
 在 *WEB-INF/web.xml* 中添加如下代码：
 
@@ -487,7 +487,7 @@ logback 允许你重新定义日志的行为而不需要重新编译代码，你
 
 logback 的配置文件非常的灵活，不需要指定 DTD 或者 xml 文件需要的语法。但是，最基本的结构为 `<configuration>` 元素，包含 0 或多个 `<appender>` 元素，其后跟 0 或多个 `<logger>` 元素，其后再跟最多只能存在一个的 `<root>` 元素。基本结构图如下：
 
-![basicSyntax](F:/project/Volong.github.io/source/_drafts/logback/images/basicSyntax.png)
+![basicSyntax](/images/basicSyntax.png)
 
 #### 标签名大小写敏感
 
@@ -629,7 +629,7 @@ appender 通过 `<appender>` 元素进行配置，需要两个强制的属性 *n
 
 > 注意：对属性的支持不可见（没懂这句话是什么意思）。
 
-![appenderSyntax](F:/project/Volong.github.io/source/_drafts/logback/images/appenderSyntax.png)
+![appenderSyntax](/images/appenderSyntax.png)
 
 `<layout>` 元素强制一个 class 属性去指定一个类的全限定名，用于实例化。与 `<appender>` 元素一样，`<layout>` 元素也可以包含与 layout 实例相关的属性。如果 layout 的 class 是 `PatternLayout`，那么 class 属性可以被隐藏掉（参考：[默认类映射](#默认类映射)），因为这个很常见。.
 
