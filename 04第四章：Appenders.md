@@ -101,7 +101,7 @@ Logback-core 为 logback 其他模块的构建奠定了基础。一般来说，l
 
 `OutputStreamAppender` 是其他三个 appender 的父类，分别是 `ConsoleAppender`、`FileAppender` 以及 `RollingFileAppender`。`FileAppender` 又是 `RollingFileAppender` 的父类。下面的类图展示 `OutputStreamAppender` 与子类之间的关系：
 
-![appenderClassDiagram](F:/project/Volong.github.io/source/_posts/appenderClassDiagram.jpg)
+![appenderClassDiagram](images/appenderClassDiagram.jpg)
 
 ## ConsoleAppender
 
@@ -814,7 +814,7 @@ java chapters.appenders.mail.EMail 100 src/main/java/chapters/appenders/mail/mai
 
 收件者收到的邮件是经过 `PatternLayout` 格式化后的 100 条日志。下图展示的就是 Mozilla Thunderbird 邮件客户端接收到的邮件。
 
-![smtpAppender1](F:/project/Volong.github.io/source/_posts/images/smtpAppender1.jpg)
+![smtpAppender1](images/smtpAppender1.jpg)
 
 下个例子配置文件 *mail2.xml* 中的 `smtpHost`，`to`，`from` 属性的值通过占位符来代替。下面是 `mail2.xml` 配置中的一部分：
 
@@ -840,7 +840,7 @@ java -Dfrom=source@xyz.com -Dto=recipient@xyz.com -DsmtpHost=some_smtp_host \
 
 由于给定的循环缓冲区的大小为 256，收件人可以看到经过 256 条经过格式化的日志显示在 HTML 表格中。注意，`chapters.appenders.mail.Email` 应用生成了 10'000 条日志，但是只有最新的 256 条日志会显示在邮件中。
 
-![smtpAppender2](F:/project/Volong.github.io/source/_posts/images/smtpAppender2.jpg)
+![smtpAppender2](images/smtpAppender2.jpg)
 
 像 Mozilla Thunderbird, Eudora or MS Outlook 这些邮件客户端，提供了非常好的 CSS 样式来支持 HTML 邮件。但是，有时候会自动将 HTML 格式变成文本格式。如果想在 Thunderbird 查看 HTML 格式的邮件，需要通过 "View→Message Body As→Original HTML" 选项来进行设置。Yahoo 邮箱对 HTML 邮件有非常好的 CSS 样式支持。另一方面对 Gmail 来说，虽然它支持基本 HTML 表结构，但是它会忽略内部的 CSS 样式。Gmail 支持内联的 CSS 样式，但是由于内联的 CSS 会使输出结果变得庞大，所以 `HTMLLayout` 不会使用内联的 CSS 样式。
 
@@ -1202,15 +1202,15 @@ java -Dfrom=source@xyz.com -Dto=recipient@xyz.com -DsmtpHost=some_smtp_host \
 
 表 *logging_event*：
 
-![dbAppenderLE](F:/project/Volong.github.io/source/images/logback/dbAppenderLE.gif)
+![dbAppenderLE](images/dbAppenderLE.gif)
 
 表 *logging_event_exception*：
 
-![dbAppenderLEException](F:/project/Volong.github.io/source/images/logback/dbAppenderLEException.gif)
+![dbAppenderLEException](images/dbAppenderLEException.gif)
 
 表 *logging_event_property*：
 
-![dbAppenderLEProperty](F:/project/Volong.github.io/source/images/logback/dbAppenderLEProperty.gif)
+![dbAppenderLEProperty](images/dbAppenderLEProperty.gif)
 
 #### ConnectionSource
 
@@ -1418,10 +1418,76 @@ syslog 协议非常的简单：syslog 发送者将信息发送给 syslog 接收�
 
 如名字所示，`SiftingAppender` 根据给定的运行时属性分离或者过滤日志。例如，`SiftingAppender` 可以根据用户的 session 分离日志，因此不同的用户的日志会有不同的日志文件，一个用户一个日志文件。
 
-| 属性名               | 类型       | 描述 |
-| -------------------- | ---------- | ---- |
-| **timeout**          | `Duration` |      |
-| **maxAppenderCount** | `integer`  |      |
+| 属性名               | 类型                                                         | 描述                                                         |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **timeout**          | [Duration](https://logback.qos.ch/apidocs/ch/qos/logback/core/util/Duration.html) | 一个内置的 appender 如果在指定 `timeout` 时间内没有被访问，则被认为是过时的。一个过时的 appender 会被关闭，并且不会被 `SiftingAppende` 所引用。默认值为 30 分钟 |
+| **maxAppenderCount** | `integer`                                                    | `SiftingAppender` 可以创建并且跟踪内置 appender 的最大数量。默认值为 Integer.MAX_VALUE |
+
+`SiftingAppender` 通过动态创建来实现这个。`SiftingAppender` 通过配置文件中指定的模板 (通过闭合的 `<sift>` 元素，见下面的例子) 来创建内置的 appender。`SiftingAppender` 负责管理子 appender 的生命周期。例如，`SiftingAppender` 会自动关闭并移除任何过时的 appender。在指定的 `timeout` 时间内没有被访问过的内置 appender，被认为是过时的。
+
+在处理一个日志事件时，`SiftingAppender` 会委托一个子 appender 去进行处理。选择的标准是通过 discriminator 在运行时计算。用户也可以通过 [Discriminator](https://logback.qos.ch/xref/ch/qos/logback/core/sift/Discriminator.html) 来指定一个选择标准。让我们通过一个示例来学习一下。
+
+#### 示例
+
+[SiftExample](https://logback.qos.ch/xref/chapters/appenders/sift/SiftExample.html) 应用通过打印日志来表明应用已经启动。通过 MDC 设置键 "userid" 对应的值为 "Alice"，并打印了一条日志信息。下面是主要的代码：
+
+```java
+logger.debug("Application started");
+MDC.put("userid", "Alice");
+logger.debug("Alice says hello"); 
+```
+
+`SiftingAppender` 在配置文件中使用模板的示例如下：
+
+> Example: byUserid.xml 
+
+```xml
+<configuration>
+	
+	<property name="FILE_NAME" value="FILE" />
+
+	<appender name="SIFT"
+		class="ch.qos.logback.classic.sift.SiftingAppender">
+		<!-- 在缺少 class 属性的情况下，默认的 discriminator 类型为 			                             ch.qos.logback.classic.sift.MDCBasedDiscriminator -->
+		<discriminator>
+			<key>userid</key>
+			<defaultValue>unknown</defaultValue>
+		</discriminator>
+		<sift>
+			<appender name="FILE-${userid}"
+				class="ch.qos.logback.core.FileAppender">
+				<file>${userid}_${FILE_NAME}.log</file>
+				<append>false</append>
+				<layout class="ch.qos.logback.classic.PatternLayout">
+					<pattern>%d [%thread] %level %mdc %logger{35} - %msg%n</pattern>
+				</layout>
+			</appender>
+		</sift>
+	</appender>
+
+	<root level="DEBUG">
+		<appender-ref ref="SIFT" />
+	</root>
+</configuration>
+```
+
+在没有 class 属性的情况下，默认的 discriminator 类型为 [MDCBasedDiscriminator](https://logback.qos.ch/xref/ch/qos/logback/classic/sift/MDCBasedDiscriminator.html)。discriminator 的的值为 MDC 的 key 所对应的值。但是，如果 MDC 的值为 null，那么 `defaultValue` 的将为 discriminator 的值。
+
+`SiftingAppender` 的独特之处在于它有能力去引用以及配置子 appender。在上面的例子中，`SiftingAppender` 会创建多个 `FileAppender` 实例。每个 `FileAppender` 实例通过 MDC 的 key 所对应的值来标识。每当 MDC 的 key "userid" 被分配一个新值时，一个新的 `FileAppender` 将会被构建。`SiftingAppender` 可以追踪它所创建的 appender。appender 在 30 分钟之内没有被使用将会被自动关闭并丢弃。
+
+`导出变量` 有不同 appender 实例是不够的。每一个实例都必须输出到一个唯一的资源中。为了做到这种区分，在 appender 模板中，key 被传递给 discriminator。在上面的例子中是 "userid"，它将被导出并变成一个[变量](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%8F%98%E9%87%8F%E6%9B%BF%E6%8D%A2)。因此，该变量可以通过给定的子 appender 来区分具体的资源。
+
+在上面的示例中，使用 "byUserid.xml" 来运行 `SiftExample`，将会创建两个不同的日志文件，"unknown.log" 与 "Alice.log"。
+
+`本地变量` 在版本 1.0.12 中，配置文件中局部变量的属性也可以应用到内置的 appender 中。而且，你可以在 `<sift>` 元素中[定义变量](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%8F%98%E9%87%8F%E7%9A%84%E5%AE%9A%E4%B9%89)以及[动态定义属性](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%8A%A8%E6%80%81%E5%AE%9A%E4%B9%89%E5%B1%9E%E6%80%A7)。或者在 `<sift>` 元素之外定义变量，在里面使用也是支持的。
+
+#### 获取正确的 `timeout` 
+
+对于特定类型的应用，正确的获取 `timeout` 参数非常困难。如果 `timeout` 过小，一个新的内置 appender 在创建几秒钟之后就被移除了。这种现象被称为 "制造垃圾"。如果 `timeout` 的值过大，那么 appender 会快速接连的被创建，可能会耗尽资源。同理，设置 `maxAppenderCount` 的值太低会产生垃圾。
+
+在大多数情况下，
+
+
 
 
 
