@@ -1534,11 +1534,251 @@ AsyncAppender 异步的打印 [ILoggingEvent](https://logback.qos.ch/apidocs/ch/
 
 默认情况下，事件队列的最大 容量为 256。如果队列被填满，那么新的日志事件将被阻塞，直到工作线程有机会去调度日志事件。当队列的容量没有处在最大容量的时候，应用线程能够再次开始记录日志。所以，在 AsyncAppender 在缓冲区的容量满了或者快满的情况下，异步日志记录变成了伪异步。但这也不是什么坏的事。虽然在 appender 缓冲区的压力减少之前，会稍微花点时间去处理日志事件，但是这个设计可以让应用继续保持运行。
 
-appender 的时间队列
+为应用的最大吞吐量优化 appender 的事件队列依赖以下几个因素。以下的任何一个因素都有可能导致伪同步的发生：
+
+- 大量的应用线程
+- 每个应用调用大量的日志事件
+- 每个日志事件有大量的数据
+- 高延迟的子 appender
+
+为了保持事物继续下去，增加队列的大小通常有用，但是是以应用可用的堆为代价。
+
+`丢弃行为` 根据之前的讨论，为了减少阻塞。默认情况下，当剩余容量少于 20% 的时候，`AsyncAppender` 会丢掉 TRACE, DEBUG 以及 INFO 级别的日志，保留 WARN 与 ERROR 级别的日志。该策略可以确保非阻塞的处理日志事件 (因此具有高性能)。通过设置 `discardingThreshold` 的值为 0 可以阻止丢弃日志事件。
+
+> Example: logback-async.xml 
+
+```xml
+<configuration>
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>myapp.log</file>
+    <encoder>
+      <pattern>%logger{35} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="FILE" />
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="ASYNC" />
+  </root>
+</configuration>
+```
+
+### 编写你自己的 Appender
+
+通过继承 AppenderBase 可以编写你自己的 appender。它支持处理过滤器，状态信息，以及其它大多数 appender 共享的功能。子类仅仅只需要实现 `append(Object eventObject)` 方法。
+
+接下来列出来的 `CountingConsoleAppender`，限制了输出到控制台的日志事件的数量。当日志事件的数量达到上限时，它会退出。它使用 `PatternLayoutEncoder` 来格式化日志事件，还可以接收一个 `limit` 的参数。因此，除了 `append(Object eventObject)` 方法之后，还需要一些其它的方法。正如下面展示的，这些参数都是通过 logback 多种配置机制来自动处理的。
+
+> Example: *CountingConsoleAppender.java* 
+
+```java
+package chapters.appenders;
+
+import java.io.IOException;
+
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.AppenderBase;
 
 
+public class CountingConsoleAppender extends AppenderBase<ILoggingEvent> {
+  static int DEFAULT_LIMIT = 10;
+  int counter = 0;
+  int limit = DEFAULT_LIMIT;
+  
+  PatternLayoutEncoder encoder;
+  
+  public void setLimit(int limit) {
+    this.limit = limit;
+  }
 
+  public int getLimit() {
+    return limit;
+  }
+  
+  @Override
+  public void start() {
+    if (this.encoder == null) {
+      addError("No encoder set for the appender named ["+ name +"].");
+      return;
+    }
+    
+    try {
+      encoder.init(System.out);
+    } catch (IOException e) {
+    }
+    super.start();
+  }
 
+  public void append(ILoggingEvent event) {
+    if (counter >= limit) {
+      return;
+    }
+    // 通过我们自己的 layout 来格式化日志事件
+    try {
+      this.encoder.doEncode(event);
+    } catch (IOException e) {
+    }
 
+    // 准备下一个事件
+    counter++;
+  }
 
+  public PatternLayoutEncoder getEncoder() {
+    return encoder;
+  }
 
+  public void setEncoder(PatternLayoutEncoder encoder) {
+    this.encoder = encoder;
+  }
+}
+```
+
+`start()` 方法会检查是否有 `PatternLayoutEncoder` 存在，如果不存在，appender 将会启动失败并会发出错误信息。
+
+这个定制的 appender 说明了两点：
+
+- 所有的属性遵循 JavaBean 的 setter/getter 转换，由 logback 透明的处理。在 logback 配置期间，`start()` 方法会被自动调用，用来验证 appender 的各种属性是否设置与一致
+-  `AppenderBase.doAppend()` 方法会调用它子类的所有 append() 方法。实际上输出操作发生在 `append()` 方法中。而且，在这个方法中，appender 通过调用它们的 layout 来格式日志事件。
+
+[`CountingConsoleAppender`](https://logback.qos.ch/xref/chapters/appenders/CountingConsoleAppender.html) 可以像其它的 appender 一样配置。详情见 *countingConsole.xml*。
+
+## Logback Access
+
+大部分的 appender 都可以在 logback-classic 中找到，同样的在 logback-access 中也可以找到。它们的工作本质上与在 logback-classic 中表现的是一样的。在接下来的部分，我们将讨论它们的用法。
+
+### SocketAppender 与 SSLSocketAppender
+
+[`SocketAppender`](https://logback.qos.ch/xref/ch/qos/logback/access/net/SocketAppender.html) 被委托将序列化的 `AccessEvent` 对象记录到远程实体上去。远程日志事件对 access event 来说是非侵入式的。在接收到并序列化之后，日志事件就像在本地被生成一样。
+
+[`SSLSocketAppender`](https://logback.qos.ch/xref/ch/qos/logback/access/net/SSLSocketAppender.html) 扩展了 `SocketAppender`，通过 SSL 传输日志到远程实体上。
+
+access 的 `SocketAppender` 属性跟 classic 中的 `SocketAppender` 属性一样。
+
+### ServerSocketAppender 与 SSLServerSocketAppender
+
+跟 `SocketAppender` 一样，[`ServerSocketAppender`](https://logback.qos.ch/xref/ch/qos/logback/access/net/server/ServerSocketAppender.html) 被委托传输序列化后的 `AccessEvent` 对象到远程实体上。但是，使用 `ServerSocketAppender` 时，appender 充当一个服务器的角色，被动的监听 TCP 端口，等待客户端的连接。传送到 appender 的日志事件将被分发给所有连接的客户端。
+
+[`SSLServerSocketAppender`](https://logback.qos.ch/xref/ch/qos/logback/access/net/server/SSLServerSocketAppender.html) 拓展了 `ServerSocketAppender`，通过 SSL 传输日志到远程实体上。
+
+access 的 `ServerSocketAppender` 属性跟 classic 中的 `ServerSocketAppender` 属性一样。
+
+### SMTPAppender
+
+access 中的 [`SMTPAppender`](https://logback.qos.ch/xref/ch/qos/logback/access/net/SMTPAppender.html) 工作的机制跟 classic 中的一样。但是 `evaluator` 属性完全不同。默认情况下，`SMTPAppender` 使用一个 `URLEvaluator` 对象。这个 evaluator 包含了一个 url 列表，用来检查当前请求的 url。当其中一个页面给 `URLEvaluator` 进行请求时，`SMTPAppender` 会发送一封邮件。
+
+下面是在 access 环境下的一个例子：
+
+> Example: logback-smtp.xml 
+
+```xml
+<appender name="SMTP"
+  class="ch.qos.logback.access.net.SMTPAppender">
+  <layout class="ch.qos.logback.access.html.HTMLLayout">
+    <pattern>%h%l%u%t%r%s%b</pattern>
+  </layout>
+    
+  <Evaluator class="ch.qos.logback.access.net.URLEvaluator">
+    <URL>url1.jsp</URL>
+    <URL>directory/url2.html</URL>
+  </Evaluator>
+  <from>sender_email@host.com</from>
+  <smtpHost>mail.domain.com</smtpHost>
+  <to>recipient_email@host.com</to>
+</appender>
+```
+
+在某些特定的流程中，用户选择的页面是一个重要的步骤，那么将会触发邮件的发送。例如，当一个这样的页面被访问时，之前被访问过的页面会包含在邮件中被发送，还会包含任何用户想要的信息。
+
+### DBAppender
+
+[`DBAppender`](https://logback.qos.ch/xref/ch/qos/logback/access/db/DBAppender.html) 用来将 access 事件插入到数据库。
+
+`DBAppender` 用到两张表：*access_event* 以及 *access_event_header*。在使用 `DBAppender` 之前，它们必须存在。logback 内置了 SQL 脚本用来创建表格。它们在 *logback-access/src/main/java/ch/qos/logback/access/db/script* 文件夹中。大部分流行的数据库都有一个对应的脚本。如果你使用的数据库不存在一个这样的脚本，那么你可以根据已经存在例子，很轻易的就可以写一个。我们鼓励你将一个这样的脚本提交到这个项目中。
+
+表 *access_event* 包含的字段如下：
+
+| 字段           | 类型      | 描述                                              |
+| -------------- | --------- | ------------------------------------------------- |
+| **timestamp**  | `big int` | access 时间创建的时间                             |
+| **requestURI** | `varchar` | 请求的 URI                                        |
+| **requestURL** | `varchar` | 请求的 URL。由请求方法，请求 URI 以及请求协议组成 |
+| **remoteHost** | `varchar` | 远程主机的名字                                    |
+| **remoteUser** | `varchar` | 远程用户的名字                                    |
+| **remoteAddr** | `varchar` | 远程 IP 地址                                      |
+| **protocol**   | `varchar` | 请求协议。例如 *HTTP* 或 *HTTPS*                  |
+| **method**     | `varchar` | 请求方法。通常为 *GET* 或 *POST*                  |
+| **serverName** | `varchar` | 发出请求的服务器的名字                            |
+| **event_id**   | `int`     | access 事件的数据库 id                            |
+
+表 *access_event_header* 包含了每个请求头。字段如下：
+
+| 字段             | 类型    | 描述                                                         |
+| ---------------- | ------- | ------------------------------------------------------------ |
+| **event_id**     | int     | 相对应 access 事件的数据库 id                                |
+| **header_key**   | varchar | 请求头的名字，例如 *User-Agent*                              |
+| **header_value** | varchar | 请求头的值，例如  *Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8.1) Gecko/20061010 Firefox/2.0* |
+
+classic 中的 `DBAppender` 属性在 access 的 `DBAppender` 中一样有效。后者提供了另一个选项，如下：
+
+| 属性名            | 类型    | 描述                                             |
+| ----------------- | ------- | ------------------------------------------------ |
+| **insertHeaders** | boolean | 告诉 `DBAppender` 用所有请求的请求头来填充数据库 |
+
+下面是一个使用 `DBAppender` 的例子：
+
+> Example: *logback-DB.xml*
+
+```xml
+<configuration>
+
+  <appender name="DB" class="ch.qos.logback.access.db.DBAppender">
+    <connectionSource class="ch.qos.logback.core.db.DriverManagerConnectionSource">
+      <driverClass>com.mysql.jdbc.Driver</driverClass>
+      <url>jdbc:mysql://localhost:3306/logbackdb</url>
+      <user>logback</user>
+      <password>logback</password>
+    </connectionSource>
+    <insertHeaders>true</insertHeaders>
+  </appender>
+
+  <appender-ref ref="DB" />
+</configuration>
+```
+
+### SiftingAppender
+
+logback-access 中的 SiftingAppender 跟 logback-classic 中的 SiftingAppender 非常相似。主要的不同在于 logback-access 默认的 discriminator 名字叫 [AccessEventDiscriminator](https://logback.qos.ch/xref/ch/qos/logback/access/sift/AccessEventDiscriminator.html)，而不是基于 MDC。从名字可以看出，AccessEventDiscriminator 在 AccessEvent 中使用一个指定的字段来选择一个内置的 appender。如果它的值为 null，那么将使用 `defaultValue` 指定的值。
+
+指定的 AccessEvent 可以是 COOKIE, REQUEST_ATTRIBUTE, SESSION_ATTRIBUTE, REMOTE_ADDRESS, LOCAL_PORT, REQUEST_URI 其中的一种。注意，前三个字段中必须指定 `AdditionalKey`。
+
+下面是配置示例：
+
+> Example: access-siftingFile.xml 
+
+```xml
+<configuration>
+  <appender name="SIFTING" class="ch.qos.logback.access.sift.SiftingAppender">
+    <Discriminator class="ch.qos.logback.access.sift.AccessEventDiscriminator">
+      <Key>id</Key>
+      <FieldName>SESSION_ATTRIBUTE</FieldName>
+      <AdditionalKey>username</AdditionalKey>
+      <defaultValue>NA</defaultValue>
+    </Discriminator>
+    <sift>
+       <appender name="ch.qos.logback:logback-site:jar:1.3.0-alpha4" class="ch.qos.logback.core.FileAppender">
+        <file>byUser/ch.qos.logback:logback-site:jar:1.3.0-alpha4.log</file>
+        <layout class="ch.qos.logback.access.PatternLayout">
+          <pattern>%h %l %u %t \"%r\" %s %b</pattern>
+        </layout>
+      </appender>
+    </sift>
+  </appender>
+  <appender-ref ref="SIFTING" />
+</configuration>
+```
+
+在上面的配置文件中，`SiftingAppender` 内置了一个 `FileAppender` 实例。名为 "id" 的键被作为一个变量用于内置的 `FileAppender` 实例。默认的 discriminator，名叫 AccessEventDiscriminator，会在每个 `AccessEvent` 中查找一个 "username" 的 session 属性。如果没有，那么将使用默认值 "NA"。因此，如果一个名叫 "username" 的 session 属性包含了用户每条日志的用户名，那么以用户名命名的日志文件将会在 *byUser/* 文件夹下，日志文件包含了该用户产生的所有 access 日志。
