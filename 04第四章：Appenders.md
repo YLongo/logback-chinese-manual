@@ -1485,7 +1485,58 @@ logger.debug("Alice says hello");
 
 对于特定类型的应用，正确的获取 `timeout` 参数非常困难。如果 `timeout` 过小，一个新的内置 appender 在创建几秒钟之后就被移除了。这种现象被称为 "制造垃圾"。如果 `timeout` 的值过大，那么 appender 会快速接连的被创建，可能会耗尽资源。同理，设置 `maxAppenderCount` 的值太低会产生垃圾。
 
-在大多数情况下，
+在大多数情况下，在代码中显示的指出不需要再创建内置的 appender。需要在代码中标记日志事件为 [FINALIZE_SESSION](https://logback.qos.ch/apidocs/ch/qos/logback/classic/ClassicConstants.html#FINALIZE_SESSION_MARKER)。无论什么时候 SiftingAppender 看到日志事件标记为 `FINALIZE_SESSION`，它将会终结相关的子 appender。在生命周期快结束时，内置的 appender 将会留存几秒钟来处理之后到来的日志事件，然后再关闭。
+
+```java
+import org.slf4j.Logger;
+import static ch.qos.logback.classic.ClassicConstants.FINALIZE_SESSION_MARKER;
+
+  void job(String jobId) {
+   
+    MDC.put("jobId", jobId);
+    logger.info("Starting job.");
+
+    ... do whather the job needs to do
+    
+    // 将导致内置 appender 结束生命周期。但是会留存几秒钟
+    logger.info(FINALIZE_SESSION_MARKER, "About to end the job");
+
+    try {
+      .. perform clean up
+    } catch(Exception e);  
+      // 被留存的 appender 处理，但是不会再创建新的 appender
+      logger.error("unexpected error while cleaning up", e);
+    }
+  }
+```
+
+### AsyncAppender
+
+AsyncAppender 异步的打印 [ILoggingEvent](https://logback.qos.ch/apidocs/ch/qos/logback/classic/spi/ILoggingEvent.html)。它仅仅是作为一个事件调度器的存在，因此必须调用其它的 appender 来完成操作。
+
+`默认满了 80% 会丢弃数据` AsyncAppender 使用 [BlockingQueue](http://docs.oracle.com/javase/1.5.0/docs/api/java/util/concurrent/BlockingQueue.html) 来缓存日志时间。AsyncAppender 会创建一个工作线程去队列的头部获取数据，并将日志事件调度给附加再 AsyncAppender 上的 appender。在默认的情况下，在队列被占用了 80% 的情况下，AsyncAppender 会丢弃掉级别为 TRACE，DEBUG，INFO 的日志事件。这个策略虽然会丢失掉日志，但是对性能有利。
+
+`停止/重新部署应用` 当停止或者重新部署应用时，`AsyncAppender` 必须被终止，为了停止并召回工作线程，以及刷新队列中的日志事件。通过[终止上下文](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%81%9C%E6%AD%A2-logback-classic)可以达到这个目标，并会关闭所有的 appender，包含所有 `AsyncAppender` 实例。`AsyncAppender` 将等待工作线程指定的 `maxFlushTime` 时间来刷新队列。如果你发现在关闭 `LoggerContext` 期间，队列中的日志事件被丢弃了，那么你需要去增加 `maxFlushTime`。指定 `maxFlushTime` 的值为 0 将会强制 `AsyncAppender` 等待所有日志事件被刷新才会从 stop() 方法中返回。
+
+`停止后再清理` 取决于 JVM 的停止模式，工作线程在处理队列中的事件时被打断会导致日志事件在队列中被阻塞。一般发生在 `LoggerContext` 没有被完全停止，或者 JVM 在典型控制流之外终止。为了避免工作队列在这些情况下被打断。将一个 shutdown hook 在 JVM 运行时插入，在 JVM 开始准备停止的时候可以[正确的关闭 LoggerContext](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%81%9C%E6%AD%A2-logback-classic)。当其它的 shutdown hook 尝试记录事件时，shutdown hook 可以作为首选的方法来完全关闭 logback。
+
+>   最后一句话没有搞懂是什么意思
+
+如下是 AsyncAppender 的一些属性：
+
+| 属性名              | 类型      | 描述                                                         |
+| ------------------- | --------- | ------------------------------------------------------------ |
+| queueSize           | `int`     | 队列的最大容量，默认为 256                                   |
+| discardingThreshold | `int`     | 默认，当队列还剩余 20% 的容量时，会丢弃级别为 TRACE, DEBUG 与 INFO 的日志，仅仅只保留 WARN 与 ERROR 级别的日志。想要保留所有的事件，可以设置为 0 |
+| includeCallerData   | `boolean` | 获取调用者的数据相对来说比较昂贵。为了提高性能，默认情况下不会获取调用者的信息。默认情况下，只有像线程名或者 [MDC](https://logback.qos.ch/manual/mdc.html) 这种"便宜"的数据会被复制。设置为 true 时，appender 会包含调用者的信息 |
+| maxFlushTime        | `int`     | 根据所引用 appender 队列的深度以及延迟， `AsyncAppender` 可能会耗费长时间去刷新队列。当 `LoggerContext` 被停止时， `AsyncAppender stop` 方法会等待工作线程指定的时间来完成。使用 maxFlushTime 来指定最大的刷新时间，单位为毫秒。在指定时间内没有被处理完的事件将会被丢弃。这个属性的值的含义与  [Thread.join(long)](http://docs.oracle.com/javase/7/docs/api/java/lang/Thread.html#join(long)) 相同 |
+| neverBlock          | `boolean` | 默认为 false，在队列满的时候 appender 会阻塞而不是丢弃信息。设置为 true，appender 不会阻塞你的应用而会将消息丢弃 |
+
+默认情况下，事件队列的最大 容量为 256。如果队列被填满，那么新的日志事件将被阻塞，直到工作线程有机会去调度日志事件。当队列的容量没有处在最大容量的时候，应用线程能够再次开始记录日志。所以，在 AsyncAppender 在缓冲区的容量满了或者快满的情况下，异步日志记录变成了伪异步。但这也不是什么坏的事。虽然在 appender 缓冲区的压力减少之前，会稍微花点时间去处理日志事件，但是这个设计可以让应用继续保持运行。
+
+appender 的时间队列
+
+
 
 
 
