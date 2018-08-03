@@ -228,7 +228,37 @@ DEBUG [main]: Message 1
 WARN  [main]: Message 2
 ```
 
-转换模式
+在转换模式 **"%-5level [%thread]: %message%n"** 中，字面量与转换说明符之间没有明显的分隔符。当对转换模式进行解析的时候，`PatternLayout` 有能力对字面量 (空格符，方括号，冒号) 和 转换说明符进行区分。在上面的例子中，转换说明符 %-5level 表示日志事件的级别的字符应该向左对齐，保持五个字符的宽度。具体的转换格式将会在下面介绍。
+
+在 `PatternLayout` 中，括号用于对转换模式进行分组。**'(' 与 ')' 有特殊的含义，因此如果想用作字面量，需要进行特殊的转义**。圆括号的特殊含义将在[下面](https://logback.qos.ch/manual/layouts.html#Parentheses) 进行详细的介绍。
+
+之前提到过，特定的转换模式可以通过花括号指定可选的参数。一个简单的可选转换模式可以是 %logger{10}。在这里 "logger" 就是转换字符，10 就是可选参数。可选参将在[下面](https://logback.qos.ch/manual/layouts.html#cwOptions)详细介绍。
+
+转换字符与它们的可选参数在下面的表格中进行详细叙述。当多个转换字符在同一个单元格中被列出来，它们被当作别名来考虑。
+
+| 转换字符                                                     | 效果                                                         |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **c**{*length*}<br />**lo**{*length*}<br />**logger**{*length*} | 输出 logger 的名字作为日志事件的来源。转换字符接收一个作为它的第一个也是为一个参数。转换器的简写算法将会缩短 logger 的名字，但是通过不会丢失重要的信息。设置 length 的值为 0 是一个例外。它将会导致转换字符返回 logger 名字中最右边的点右边的字符。下面的表格提供了一个示例：<br />**转换说明符**    **logger的名字**                                   **结果**<br />%logger         mainPackage.sub.sample.Bar     mainPackage.sub.sample.Bar<br />%logger{0}    mainPackage.sub.sample.Bar     Bar<br />%logger{5}    mainPackage.sub.sample.Bar     m.s.s.Bar<br />%logger{10}  mainPackage.sub.sample.Bar     m.s.s.Bar<br />%logger{15}  mainPackage.sub.sample.Bar     m.s.sample.Bar<br />%logger{16}  mainPackage.sub.sample.Bar     m.sub.sample.Bar<br />%logger{26}  mainPackage.sub.sample.Bar     mainPackage.sub.sample.Bar<br />logger 名字最右边的部分永远不会被简写，即使它的长度比 *length* 的值要大。其它的部分可能会被缩短为一个字符，但是永不会被移除。 |
+| **C**{*length*}  **class**{*length*}                         | 输出发出日志请求的类的全限定名称。<br />跟 *%logger%* 转换符一样，它也可以接收一个整型的可选参数去缩短类名。0 表示特殊含义，在打印类名时将不会输出包的前缀名。默认表示打印类的全限定名。<br />生成调用者类的信息并不是特别快。因此，应该避免使用，除非执行速度不是问题。 |
+| **contextName** **cn**                                       | 输出日志事件附加到的 logger 上下文的名字。                   |
+| **d**{*pattern*}  **date**{*pattern*}  **d**{*pattern*, *timezone*}  **date**{*pattern*, *timezone*} |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
+|                                                              |                                                              |
 
 
 
