@@ -174,9 +174,61 @@ logback 配备了一个更加灵活的 layout 叫做 [`PatternLayout`](https://l
 
 `PatternLayout` 中的转换模式与 C 语言中 `printf()` 方法中的转换模式密切相关。转换模式由字面量与格式控制表达式也叫*转换说明符*组成。你可以在转换模式中自由的插入字面量。每一个转换说明符由一个百分号开始 '%'，后面跟随可选的*格式修改器*，以及用综括号括起来的转换字符与可选的参数。转换字符需要转换的字段。如：logger 的名字，日志级别，日期以及线程名。格式修改器控制字段的宽度，间距以及左右对齐。
 
+正如我们已经在其它地方提到过的，`FileAppender` 及其子类需要一个 encoder。因为，当将 `FileAppender` 及其子类与 `PatternLayout` 结合使用时，`PatternLayout` 必须用 encoder 包裹起来。鉴于 `FileAppender/PatternLayout` 结合使用很常见，因此 logback 单独设计了一个名叫 `PatternLayoutEncoder` 的 encoder，包裹了一个 `PatternLayout`，因此它可以被当作一个 encoder。下面是通过代码配置 `ConsoleAppender` 与 `PatternLayoutEncoder` 使用的例子：
 
+>   Example: [PatternSample.java](https://logback.qos.ch/xref/chapters/layouts/PatternSample.html)
 
+```java
+package chapters.layouts;
 
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.ConsoleAppender;
+
+public class PatternSample {
+
+  static public void main(String[] args) throws Exception {
+    Logger rootLogger = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+    LoggerContext loggerContext = rootLogger.getLoggerContext();
+    // we are not interested in auto-configuration
+    loggerContext.reset();
+
+    PatternLayoutEncoder encoder = new PatternLayoutEncoder();
+    encoder.setContext(loggerContext);
+    encoder.setPattern("%-5level [%thread]: %message%n");
+    encoder.start();
+
+    ConsoleAppender<ILoggingEvent> appender = new ConsoleAppender<ILoggingEvent>();
+    appender.setContext(loggerContext);
+    appender.setEncoder(encoder); 
+    appender.start();
+
+    rootLogger.addAppender(appender);
+
+    rootLogger.debug("Message 1"); 
+    rootLogger.warn("Message 2");
+  } 
+}
+```
+
+在上面这个例子中，转换模式被设置为 "**%-5level [%thread]: %message%n** "，关于 logback 中简短的转换字符将会很快给出。运行 `PatternSample`：
+
+```bash
+java java chapters.layouts.PatternSample
+```
+
+将会输出如下信息：
+
+```java
+DEBUG [main]: Message 1 
+WARN  [main]: Message 2
+```
+
+转换模式
 
 
 
