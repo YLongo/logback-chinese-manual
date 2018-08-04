@@ -238,20 +238,7 @@ WARN  [main]: Message 2
 
 | 转换字符                                                     | 效果                                                         |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| **c**{*length*}<br />**lo**{*length*}<br />**logger**{*length*} |                                                              <table border="1">
-	<tr>
-		<th>Heading</th>
-		<th>Another Heading</th>
-	</tr>
-	<tr>
-		<td>row 1, cell 1</td>
-		<td>row 1, cell 2</td>
-	</tr>
-	<tr>
-		<td>row 2, cell 1</td>
-		<td>row 2, cell 2</td>
-	</tr>
-</table>|
+| **c**{*length*}<br />**lo**{*length*}<br />**logger**{*length*} | <table border="1">	<tr>		<th>Heading</th>		<th>Another Heading</th>	</tr>	<tr>		<td>row 1, cell 1</td>		<td>row 1, cell 2</td>	</tr>	<tr>		<td>row 2, cell 1</td>	<td>row 2, cell 2</td>	</tr></table> |
 | **C**{*length*}  **class**{*length*}                         | 输出发出日志请求的类的全限定名称。<br />跟 *%logger%* 转换符一样，它也可以接收一个整型的可选参数去缩短类名。0 表示特殊含义，在打印类名时将不会输出包的前缀名。默认表示打印类的全限定名。<br />生成调用者类的信息并不是特别快。因此，应该避免使用，除非执行速度不是问题。 |
 | **contextName** **cn**                                       | 输出日志事件附加到的 logger 上下文的名字。                   |
 | **d**{*pattern*}  **date**{*pattern*}  **d**{*pattern*, *timezone*}  **date**{*pattern*, *timezone*} | 用于输出日志事件的日期。日期转换符允许接收一个字符串作为参数。字符串的语法与 [SimpleDateFormat](https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html) 中的格式完全兼容。<br />你可以指定 "ISO8601" 来表示将日期格式为 ISO8601 类型。如果没有指定日期格式，那么 %date 转换字符默认为 [ISO860 类型](https://en.wikipedia.org/wiki/ISO_8601)。<br />这里有一个例子。它假设当前时间为 2006.10.20 星期五，作者刚刚吃完饭准备写这篇文档。<br />**转换模式**                                                       \| **结果**<br />%d                                                                 \| 2006-10-20 14:06:49,812 <br />%date                                                           \| 2006-10-20 14:06:49,812 <br />%date{ISO8601}                                         \| 2006-10-20 14:06:49,812 <br />%date{HH:mm:ss.SSS}                              \| 14:06:49.812 <br />%date{dd MMM yyyy;HH:mm:ss.SSS}    \| 20 oct. 2006;14:06:49.812 <br />第二个参数用于指定时区。例如， '%date{HH:mm:ss.SSS, Australia/Perth} 将会打印澳大利亚  佩斯所在时区的日期。 |
