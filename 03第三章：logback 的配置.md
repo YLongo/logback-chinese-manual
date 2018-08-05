@@ -256,11 +256,11 @@ public class ServerMain {
 
 如果更改后的配置文件有语法错误，则会回退到之前的配置文件。
 
-#### 在堆栈中打包数据
+#### 在堆栈中展示包数据
 
-> 注意：在 1.1.4 版本中，打包数据是默认被禁用的。
+> 注意：在 1.1.4 版本中，展示包数据是默认被禁用的。
 
-如果启用了打包数据，logback 会在堆栈的每一行显示 jar 包的名字以及 jar 的版本号。打包数据可以很好的解决 jar 版本冲突的问题。但是，这个的代价比较高，特别是在频繁报错的情况下。
+如果启用了展示包数据，logback 会在堆栈的每一行显示 jar 包的名字以及 jar 的版本号。展示包数据可以很好的解决 jar 版本冲突的问题。但是，这个的代价比较高，特别是在频繁报错的情况下。
 
 `Example`：
 
@@ -280,7 +280,7 @@ java.lang.Exception: 99 is invalid
   at org.mortbay.jetty.handler.ContextHandlerCollection.handle(ContextHandlerCollection.java:230) [jetty-6.1.12.jar:6.1.12]
 ```
 
-启用打包数据：
+启用展示包数据：
 
 ```xml
 <configuration packagingData="true">
