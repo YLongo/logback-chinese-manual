@@ -259,8 +259,12 @@ WARN  [main]: Message 2
 | **property{key}**                                            | 输出属性 *key* 所对应的值。相关定义参见 [定义变量](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%8F%98%E9%87%8F%E6%9B%BF%E6%8D%A2) 以及[作用域](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E4%BD%9C%E7%94%A8%E5%9F%9F)。如果 key 在 logger context 中没有找到，那么将会去系统属性中找。<br />*key* 没有默认值，如果缺失，则会展示 " Property_HAS_NO_KEY" 的错误信息。 |
 | **replace(p){r, t}**                                         | 在子模式 'p' 产生的字符中，将所有出现正则表达式 'r' 的地方替换为 't'。例如，"%replace(%msg){'\s', ''}" 将会移除事件消息中所有空格。<br />模式 'p' 可以是任意复杂的甚至由多个转换字符组成。例如，"%replace(%logger %msg){'\.', '/'}" 将会替换 logger 以及消息中所有的点为斜杆。 |
 | **rEx**{*depth*}  **rootException**{*depth*}   **rEx**{depth, evaluator-1, ..., evaluator-n}  **rootException**{depth, evaluator-1, ..., evaluator-n} | 输出与日志事件相关的堆栈信息，根异常将会首先输出，而是标准的"根异常最后输出"。下面是一个输出例子：<br /><pre>java.lang.NullPointerException<br />  at com.xyz.Wombat(Wombat.java:57) ~[wombat-1.3.jar:1.3]<br />  at com.xyz.Wombat(Wombat.java:76) ~[wombat-1.3.jar:1.3]<br />Wrapped by: org.springframework.BeanCreationException: Error creating bean with name 'wombat': <br />  at org.springframework.AbstractBeanFactory.getBean(AbstractBeanFactory.java:248) [spring-2.0.jar:2.0]<br />  at org.springframework.AbstractBeanFactory.getBean(AbstractBeanFactory.java:170) [spring-2.0.jar:2.0]<br />  at org.apache.catalina.StandardContext.listenerStart(StandardContext.java:3934) [tomcat-6.0.26.jar:6.0.26]</pre>%rootException 跟 %xException 类似，也允许一些可选的参数，包括深度以及 evaluator。它也会输出包信息。简单来说，%rootException 跟 %xException 非常的类似，仅仅是异常输出的顺序完全相反。<br />  %rootException 的作者 Tomasz Nurkiewicz 在他的博客说明了他所作的贡献 ["Logging exceptions root cause first"](http://nurkiewicz.blogspot.com/2011/09/logging-exceptions-root-cause-first.html)。 |
-|                                                              |                                                              |
-|                                                              |                                                              |
 
+#### % 有特殊的含义
 
+在给定的转换模式上下文中，% 有特殊的含义。如果作为字面量，需要进行转义。例如，"%d %p \% %m%n"。
+
+#### 转换字符对字面量的限制
+
+在大多数的情况下，字面量包括空格或者其它的分隔符，所以它们不会与转换字符混淆。例如，"%level [%thread] - %message%n" 包含字面量字符 " [" 与 "] - "。但是，如果一个转换字符后面紧跟着一个字面量，那么 logback 的模式解析器将会错误的认为这个字面量也是转换字符的一部分。例如，"%date**%nHello**" 将会被解析成两个转换字符 %date 与 %nHello，但是 %nHello 不是一个转换字符，所以 logback 将会输出 %PARSER_ERROR[nHello]。如果你想要区分 %n 跟 Hello，可以通过给 %n 传递一个空参数。例如，"%date**%n{}**Hello" 将会被解析为 %date %n 再紧跟着一个字符串 "Hello"。
 
