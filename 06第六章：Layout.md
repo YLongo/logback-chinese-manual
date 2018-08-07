@@ -325,5 +325,45 @@ WARN  [main]: Message 2
 
 ## 特殊的圆括号
 
-在 logback 里，模式字符串中的圆括号被看作为分组标记。因此，它能够对子模式进行分组，并且直接对子模式进行格式化。在 0.9.27 版本，logback 开始支持综合转换字符，例如 
+在 logback 里，模式字符串中的圆括号被看作为分组标记。因此，它能够对子模式进行分组，并且直接对子模式进行格式化。在 0.9.27 版本，logback 开始支持综合转换字符，例如 [%replace](https://github.com/Volong/logback-chinese-manual/blob/master/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayout.md#replace) 可以对子模式进行转换。
+
+例如一下模式：
+
+```
+%-30(%d{HH:mm:ss.SSS} [%thread]) %-5level %logger{32} - %msg%n
+```
+
+将会对子模式 "%d{HH:mm:ss.SSS} [%thread]" 进行分组输出，为了在少于 30 个字符时进行右填充。
+
+如果没有进行分组将会输出：
+
+```java
+13:09:30 [main] DEBUG c.q.logback.demo.ContextListener - Classload hashcode is 13995234
+13:09:30 [main] DEBUG c.q.logback.demo.ContextListener - Initializing for ServletContext
+13:09:30 [main] DEBUG c.q.logback.demo.ContextListener - Trying platform Mbean server
+13:09:30 [pool-1-thread-1] INFO  ch.qos.logback.demo.LoggingTask - Howdydy-diddly-ho - 0
+13:09:38 [btpool0-7] INFO c.q.l.demo.lottery.LotteryAction - Number: 50 was tried.
+13:09:40 [btpool0-7] INFO c.q.l.d.prime.NumberCruncherImpl - Beginning to factor.
+13:09:40 [btpool0-7] DEBUG c.q.l.d.prime.NumberCruncherImpl - Trying 2 as a factor.
+13:09:40 [btpool0-7] INFO c.q.l.d.prime.NumberCruncherImpl - Found factor 2
+```
+
+如果对 "%-30()" 进行分组将会输出：
+
+```java
+13:09:30 [main]            DEBUG c.q.logback.demo.ContextListener - Classload hashcode is 13995234
+13:09:30 [main]            DEBUG c.q.logback.demo.ContextListener - Initializing for ServletContext
+13:09:30 [main]            DEBUG c.q.logback.demo.ContextListener - Trying platform Mbean server
+13:09:30 [pool-1-thread-1] INFO  ch.qos.logback.demo.LoggingTask - Howdydy-diddly-ho - 0
+13:09:38 [btpool0-7]       INFO  c.q.l.demo.lottery.LotteryAction - Number: 50 was tried.
+13:09:40 [btpool0-7]       INFO  c.q.l.d.prime.NumberCruncherImpl - Beginning to factor.
+13:09:40 [btpool0-7]       DEBUG c.q.l.d.prime.NumberCruncherImpl - Trying 2 as a factor.
+13:09:40 [btpool0-7]       INFO  c.q.l.d.prime.NumberCruncherImpl - Found factor 2
+```
+
+后者的格式更加容易阅读。
+
+如果你想将圆括号当作字面量输出，那么你需要对每个圆括号用反斜杠进行转义。就像 **\(**%d{HH:mm:ss.SSS} [%thread]**\)** 一样。
+
+## 着色
 
