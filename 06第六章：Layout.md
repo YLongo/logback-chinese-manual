@@ -239,8 +239,8 @@ WARN  [main]: Message 2
 | 转换字符                                                     | 效果                                                         |
 | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | **c**{*length*}<br />**lo**{*length*}<br />**logger**{*length*} | 输出 logger 的名字作为日志事件的来源。转换字符接收一个作为它的第一个也是为一个参数。转换器的简写算法将会缩短 logger 的名字，但是通过不会丢失重要的信息。设置 length 的值为 0 是一个例外。它将会导致转换字符返回 logger 名字中最右边的点右边的字符。下面的表格提供了一个示例：<br /><table><tr><th>转换说明符</th><th>logger的名字</th><th>结果</th></tr><tr><td>%logger</td><td>mainPackage.sub.sample.Bar</td><td>mainPackage.sub.sample.Bar</td></tr><tr><td>%logger{0}</td><td>mainPackage.sub.sample.Bar</td><td>Bar</td></tr><tr><td>%logger{5}</td><td>mainPackage.sub.sample.Bar</td><td>m.s.s.Bar</td></tr><tr><td>%logger{10}</td><td>mainPackage.sub.sample.Bar</td><td>m.s.s.Bar</td></tr><tr><td>%logger{15}</td><td>mainPackage.sub.sample.Bar</td><td>m.s.sample.Bar</td></tr><tr><td>%logger{16}</td><td>mainPackage.sub.sample.Bar</td><td>m.sub.sample.Bar</td></tr><tr><td>%logger{26}</td><td>mainPackage.sub.sample.Bar</td><td>mainPackage.sub.sample.Bar</td></tr></table>logger 名字最右边的部分永远不会被简写，即使它的长度比 *length* 的值要大。其它的部分可能会被缩短为一个字符，但是永不会被移除。<br /> |
-| **C**{*length*}  **class**{*length*}                         | 输出发出日志请求的类的全限定名称。<br />跟 *%logger%* 转换符一样，它也可以接收一个整型的可选参数去缩短类名。0 表示特殊含义，在打印类名时将不会输出包的前缀名。默认表示打印类的全限定名。<br />生成调用者类的信息并不是特别快。因此，应该避免使用，除非执行速度不是问题。 |
-| **contextName** **cn**                                       | 输出日志事件附加到的 logger 上下文的名字。                   |
+| **C**{*length*}  <br />**class**{*length*}                   | 输出发出日志请求的类的全限定名称。<br />跟 *%logger%* 转换符一样，它也可以接收一个整型的可选参数去缩短类名。0 表示特殊含义，在打印类名时将不会输出包的前缀名。默认表示打印类的全限定名。<br />生成调用者类的信息并不是特别快。因此，应该避免使用，除非执行速度不是问题。 |
+| **contextName**<br />**cn**                                  | 输出日志事件附加到的 logger 上下文的名字。                   |
 | **d**{*pattern*}  **date**{*pattern*}  **d**{*pattern*, *timezone*}  **date**{*pattern*, *timezone*} | 用于输出日志事件的日期。日期转换符允许接收一个字符串作为参数。字符串的语法与 [SimpleDateFormat](https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html) 中的格式完全兼容。<br />你可以指定 "ISO8601" 来表示将日期格式为 ISO8601 类型。如果没有指定日期格式，那么 %date 转换字符默认为 [ISO860 类型](https://en.wikipedia.org/wiki/ISO_8601)。<br />这里有一个例子。它假设当前时间为 2006.10.20 星期五，作者刚刚吃完饭准备写这篇文档。<br /><table><tr><th>转换模式</th><th>结果</th></tr><tr><td>%d</td><td>2006-10-20 14:06:49,812</td></tr><tr><td>%date</td><td>2006-10-20 14:06:49,812</td></tr><tr><td>%date{ISO8601}</td><td>2006-10-20 14:06:49,812</td></tr><tr><td>%date{HH:mm:ss.SSS}</td><td>14:06:49.812</td></tr><tr><td>%date{dd MMM yyyy;HH:mm:ss.SSS}</td><td>20 oct. 2006;14:06:49.812</td></tr></table><br />第二个参数用于指定时区。例如， '%date{HH:mm:ss.SSS, Australia/Perth}' 将会打印世界上最孤立的城市，澳大利亚佩斯所在时区的日期。如果没有指定时区参数，则默认使用 Java 平台所在主机的时区。如果指定的时区不能识别或者拼写错误，则 [TimeZone.getTimeZone(String)](http://docs.oracle.com/javase/6/docs/api/java/util/TimeZone.html#getTimeZone(java.lang.String)) 方法会指定时区为 GMT。<br />`常见错误：` 对于 `HH:mm:ss,SSS` 模式，逗号会被解析为分隔符，所以最终会被解析为 `HH:mm:ss`，`SSS` 会被当作时区。如果你想在日期模式中使用逗号，那么你可以这样使用，%date{**"**HH:mm:ss,SSS**"**}  用双引号将日期模式包裹起来。 |
 | **F / file**                                                 | 输出发出日志请求的 Java 源文件名。<br />由于生成文件的信息不是特别快，因此，应该避免使用，除非速度不是问题。 |
 | **caller{depth}**<br />**caller{depthStart..depthEnd}**<br />**caller{depth, evaluator-1, ... evaluator-n}**<br />**caller{depthStart..depthEnd, evaluator-1, ... evaluator-n}** | 输出生成日志的调用者所在的位置信息。<br />位置信息依赖 JVM 的实现，但是通常由调用方法的全限定名以及调用者的来源组成。以及由圆括号括起来的文件名与行号。<br />*caller* 转换符还可以接收一个整形的参数，用来配置展示信息的深度。<br />例如，**%caller{2}** 会展示如下的信息：<br /><pre style="background-color:#eaecef">0    [main] DEBUG - logging statement<br />Caller+0   at mainPackage.sub.sample.Bar.sampleMethodName(Bar.java:22)<br />Caller+1   at mainPackage.sub.sample.Bar.createLoggingRequest(Bar.java:17)</pre> **%caller{3}**  会展示如下信息：<br /><pre><span style="background-color:#eaecef">16   [main] DEBUG - logging statement <br />Caller+0   at mainPackage.sub.sample.Bar.sampleMethodName(Bar.java:22) <br />Caller+1   at mainPackage.sub.sample.Bar.createLoggingRequest(Bar.java:17) <br />Caller+2   at mainPackage.ConfigTester.main(ConfigTester.java:38) </span></pre><br />*caller* 转换符还可以接收一个范围用来展示深度在这个范围内的信息。<br />例如，**%caller{1..2}** 会展示如下信息：<br /><pre>[main] DEBUG - logging statement <br />Caller+0   at mainPackage.sub.sample.Bar.createLoggingRequest(Bar.java:17)</pre><br />转换字符还可以接收一个 evaluator，在计算调用者数据之前通过指定的标准对日志事件进行测验。例如，**%caller{3, CALLER_DISPLAY_EVAL}** 会在 *CALLER_DISPLAY_EVAL* 返回一个肯定的答案，才会显示三行堆栈信息。<br />将在下面详细叙述 evaluator。 |
@@ -274,4 +274,54 @@ WARN  [main]: Message 2
 
 可选的格式修改器放在百分号跟转换字符之间。
 
-第一个可选的格式修改器是*左对齐标志*，也就是减号 (-) 字符。接下来的是*最小字段宽度修改器*，它是一个小数常量，表示输出至少多少个字符。
+第一个可选的格式修改器是*左对齐标志*，也就是减号 (-) 字符。接下来的是*最小字段宽度修改器*，它是一个十进制常量，表示输出至少多少个字符。如果字段包含很少的数据，它会选择填充左边或者右边，直到满足最小宽度。默认是填充左边 (右对齐)，但是你可以通过左对齐标志来对右边进行填充。填充字符为空格。如果字段的数据大于最小字段的宽度，会自动扩容去容纳所有的数据。字段的数据永远不会被截断。
+
+这个行为可以通过使用*最大字段宽度修改器*来改变，它通过一个点后面跟着一个十进制常量来指定。如果字段的数据长度大于最大字段的宽度，那么会从数据字段的开头移除多余的字符。举个🌰，如果最大字段的宽度是 8，数据长度是十个字符的长度，那么开头的两个字符将会被丢弃。这个行为跟 C 语言中 printf 函数从后面开始截断的行为相违背。
+
+如果想从后面开始截断，可以在点后面增加一个减号。如果是这样的话，最大字段宽度是 8，数据长度是十个字符的长度，那么最后两个字符将会被丢弃。
+
+下面是各种格式修改器的例子：
+
+| 格式修改器    | 左对齐 | 最小宽度 | 最大宽度 | 备注                                                         |
+| ------------- | ------ | -------- | -------- | ------------------------------------------------------------ |
+| %20logger     | false  | 20       | none     | 如果 logger 的名字小于 20 个字符的长度，那么会在左边填充空格 |
+| %-20logger    | true   | 20       | none     | 如果 logger 的名字小于 20 个字符的长度，那么会在右边填充空格 |
+| %.30logger    | NA     | none     | 30       | 如果 logger 的名字大于 30 个字符的长度，那么从前面开始截断   |
+| %20.30logger  | false  | 20       | 30       | 如果 logger 的名字大于 20 个字符的长度，那么会从左边填充空格。但是如果 logger 的名字大于 30 字符，将会从前面开始截断 |
+| %-20.30logger | true   | 20       | 30       | 如果 logger 的名字小于 20 个字符的长度，那么从右边开始填充空格。但是如果 logger 的名字大于 30 个字符，将会从前面开始截断 |
+| %.-30logger   | NA     | none     | 30       | 如果 logger 的名字大于 30 个字符的长度，那么从后面开始截断   |
+
+下面的表格列出了格式修改器截断的例子。但是请注意综括号 "[]" 不是输出结果的一部分，它只是用来区分输出的长度。
+
+| 格式修改器      | logger 的名字         | 结果                   |
+| --------------- | --------------------- | ---------------------- |
+| [%20.20logger]  | main.Name             | [           main.Name] |
+| [%-20.20logger] | main.Name             | [main.Name           ] |
+| [%10.10logger]  | main.foo.foo.bar.Name | [o.bar.Name]           |
+| [%10.-10logger] | main.foo.foo.bar.Name | [main.foo.f]           |
+
+### 只输出日志等级的一个字符
+
+除了可以输出 TRACE, DEBUG, WARN, INFO 或者 ERROR 来表示日志等级之外，还是输出T, D, W, I 与 E 来进行表示。你可以[自定义转换器](https://logback.qos.ch/manual/layouts.html#customConversionSpecifier) 或者利用刚才讨论的格式修改器来缩短日志级别为一个字符。这个转换说明符可能为 "%.-1level "。
+
+## 转换字符的选项
+
+一个转换字符后面可以跟一个选项。它们通过综括号来声明。我们之前已经看到了一些可能的选项。例如之前的 MDC 转换说明符 *%mdc{someKey}*。
+
+一个转换说明符可能有多个可选项。一个转换说明符可以充分利用我们即将介绍到的 evaluator，可以添加多个 evaluator 的名字到可选列表。如下：
+
+```xml
+<pattern>%-4relative [%thread] %-5level - %msg%n \
+  %caller{2, DISP_CALLER_EVAL, OTHER_EVAL_NAME, THIRD_EVAL_NAME}</pattern>
+```
+
+如果这些选项中包含了一些特殊字符，例如花括号，空格，逗号。你可以使用单引号或者双引号来包裹它们。例如：
+
+```xml
+<pattern>%-5level - %replace(%msg){'\d{14,16}', 'XXXX'}%n</pattern>
+```
+
+
+
+
+
