@@ -302,7 +302,7 @@ WARN  [main]: Message 2
 
 ### 只输出日志等级的一个字符
 
-除了可以输出 TRACE, DEBUG, WARN, INFO 或者 ERROR 来表示日志等级之外，还是输出T, D, W, I 与 E 来进行表示。你可以[自定义转换器](https://logback.qos.ch/manual/layouts.html#customConversionSpecifier) 或者利用刚才讨论的格式修改器来缩短日志级别为一个字符。这个转换说明符可能为 "%.-1level "。
+除了可以输出 TRACE, DEBUG, WARN, INFO 或者 ERROR 来表示日志等级之外，还是输出T, D, W, I 与 E 来进行表示。你可以[自定义转换器](https://logback.qos.ch/manual/layouts.html#customConversionSpecifier) 或者利用刚才讨论的格式修改器来缩短日志级别为一个字符。这个转换说明符可能为 "%.-1level"。
 
 ## 转换字符的选项
 
