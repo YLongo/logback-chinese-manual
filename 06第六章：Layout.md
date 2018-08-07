@@ -293,12 +293,12 @@ WARN  [main]: Message 2
 
 下面的表格列出了格式修改器截断的例子。但是请注意综括号 "[]" 不是输出结果的一部分，它只是用来区分输出的长度。
 
-| 格式修改器      | logger 的名字         | 结果                   |
-| --------------- | --------------------- | ---------------------- |
-| [%20.20logger]  | main.Name             | [           main.Name] |
-| [%-20.20logger] | main.Name             | [main.Name           ] |
-| [%10.10logger]  | main.foo.foo.bar.Name | [o.bar.Name]           |
-| [%10.-10logger] | main.foo.foo.bar.Name | [main.foo.f]           |
+| 格式修改器      | logger 的名字         | 结果                                                         |
+| --------------- | --------------------- | ------------------------------------------------------------ |
+| [%20.20logger]  | main.Name             | [&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;main.Name] |
+| [%-20.20logger] | main.Name             | [main.Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] |
+| [%10.10logger]  | main.foo.foo.bar.Name | [o.bar.Name]                                                 |
+| [%10.-10logger] | main.foo.foo.bar.Name | [main.foo.f]                                                 |
 
 ### 只输出日志等级的一个字符
 
