@@ -367,3 +367,37 @@ WARN  [main]: Message 2
 
 ## 着色
 
+如上所述的[圆括号](https://github.com/Volong/logback-chinese-manual/blob/master/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayout.md#%E7%89%B9%E6%AE%8A%E7%9A%84%E5%9C%86%E6%8B%AC%E5%8F%B7)分组，允许对子模式进行着色。在 1.0.5 版本，`PatternLayout` 可以识别 "%black"，"%red"，"%green"，"%yellow"，"%blue"，"%magenta","%cyan", "%white", "%gray", "%boldRed","%boldGreen", "%boldYellow", "%boldBlue", "%boldMagenta""%boldCyan", "%boldWhite" 以及 "%highlight" 作为转换字符。这些转换字符都还可以包含一个子模式。任何被颜色转换字符包裹的子模式都会通过指定的颜色输出。
+
+下面是关于着色的配置文件。
+
+```xml
+<configuration debug="true">
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+<!-- 	          在 Windows 平台下，设置 withJansi = true 来开启 ANSI 颜色代码需要 Jansi 类库 -->
+<!-- 	          需要在 classpath 引入 org.fusesource.jansi:jansi:1.8 包 -->
+<!-- 	          在基于 Unix 操作系统，像 Linux 以及 Mac OS X 系统默认支持 ANSI 颜色代码 -->
+		<withJansi>true</withJansi>
+		<encoder>
+			<pattern>[%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg %n</pattern>
+		</encoder>
+	</appender>
+	
+	<root level="DEBUG">
+		<appender-ref ref="STDOUT" />
+	</root>
+</configuration>
+```
+
+下面是相关的输出：
+
+```java
+[main] WARN  c.l.TrivialMain - a warning message 0
+[main] DEBUG c.l.TrivialMain - hello world number1
+[main] DEBUG c.l.TrivialMain - hello world number2
+[main] INFO  c.l.TrivialMain - hello world number3
+[main] DEBUG c.l.TrivialMain - hello world number4
+[main] WARN  c.l.TrivialMain - a warning message 5
+[main] ERROR c.l.TrivialMain - Finish off with fireworks
+```
+
