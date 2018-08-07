@@ -257,7 +257,7 @@ WARN  [main]: Message 2
 | **nopex**<br />**nopexception**                              | 这个转换字符不会输出任何数据，因此，它可以用来有效忽略异常信息。<br />%nopex 转换字符允许用户重写 `PatternLayout` 内部的安全机制，该机制将会在没有指定其它处理异常的转换字符时，默认添加 %xThrowable。 |
 | **marker**                                                   | 输出与日志请求相关的标签。<br />一旦标签包含子标签，那么转换器将会根据下面的格式展示父标签与子标签。<br />*parentName [child1, child2]* |
 | **property{key}**                                            | 输出属性 *key* 所对应的值。相关定义参见 [定义变量](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%8F%98%E9%87%8F%E6%9B%BF%E6%8D%A2) 以及[作用域](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E4%BD%9C%E7%94%A8%E5%9F%9F)。如果 key 在 logger context 中没有找到，那么将会去系统属性中找。<br />*key* 没有默认值，如果缺失，则会展示 " Property_HAS_NO_KEY" 的错误信息。 |
-| **replace(p){r, t}**                                         | 在子模式 'p' 产生的字符中，将所有出现正则表达式 'r' 的地方替换为 't'。例如，"%replace(%msg){'\s', ''}" 将会移除事件消息中所有空格。<br />模式 'p' 可以是任意复杂的甚至由多个转换字符组成。例如，"%replace(%logger %msg){'\.', '/'}" 将会替换 logger 以及消息中所有的点为斜杆。 |
+| <a name="replace" href="#replace">**replace(p){r, t}**</a>   | 在子模式 'p' 产生的字符中，将所有出现正则表达式 'r' 的地方替换为 't'。例如，"%replace(%msg){'\s', ''}" 将会移除事件消息中所有空格。<br />模式 'p' 可以是任意复杂的甚至由多个转换字符组成。例如，"%replace(%logger %msg){'\.', '/'}" 将会替换 logger 以及消息中所有的点为斜杆。 |
 | **rEx**{*depth*}  **rootException**{*depth*}   **rEx**{depth, evaluator-1, ..., evaluator-n}  **rootException**{depth, evaluator-1, ..., evaluator-n} | 输出与日志事件相关的堆栈信息，根异常将会首先输出，而是标准的"根异常最后输出"。下面是一个输出例子：<br /><pre>java.lang.NullPointerException<br />  at com.xyz.Wombat(Wombat.java:57) ~[wombat-1.3.jar:1.3]<br />  at com.xyz.Wombat(Wombat.java:76) ~[wombat-1.3.jar:1.3]<br />Wrapped by: org.springframework.BeanCreationException: Error creating bean with name 'wombat': <br />  at org.springframework.AbstractBeanFactory.getBean(AbstractBeanFactory.java:248) [spring-2.0.jar:2.0]<br />  at org.springframework.AbstractBeanFactory.getBean(AbstractBeanFactory.java:170) [spring-2.0.jar:2.0]<br />  at org.apache.catalina.StandardContext.listenerStart(StandardContext.java:3934) [tomcat-6.0.26.jar:6.0.26]</pre>%rootException 跟 %xException 类似，也允许一些可选的参数，包括深度以及 evaluator。它也会输出包信息。简单来说，%rootException 跟 %xException 非常的类似，仅仅是异常输出的顺序完全相反。<br />  %rootException 的作者 Tomasz Nurkiewicz 在他的博客说明了他所作的贡献 ["Logging exceptions root cause first"](http://nurkiewicz.blogspot.com/2011/09/logging-exceptions-root-cause-first.html)。 |
 
 #### % 有特殊的含义
@@ -321,7 +321,9 @@ WARN  [main]: Message 2
 <pattern>%-5level - %replace(%msg){'\d{14,16}', 'XXXX'}%n</pattern>
 ```
 
+我们传递 `\d{16}` 与 `XXXX`  给 `replace` 转换字符。它将消息中 14，15 或者 16 位的数字替换为 XXXX，用来混淆信用卡号码。在正则表达式中，"\d" 表示一个数字的简写。"{14,16\}" 会被解析成 "{14,16}"，也就是说前一个项将会被重复至少 14 次，至多 16 次。
 
+## 特殊的圆括号
 
-
+在 logback 里，模式字符串中的圆括号被看作为分组标记。因此，它能够对子模式进行分组，并且直接对子模式进行格式化。在 0.9.27 版本，logback 开始支持综合转换字符，例如 
 
