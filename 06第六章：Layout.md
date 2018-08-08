@@ -401,3 +401,81 @@ WARN  [main]: Message 2
 [main] ERROR c.l.TrivialMain - Finish off with fireworks
 ```
 
+>   其实是有颜色的，但是 md 不支持直接对字体颜色进行操作，而我懒得去折腾 HTML 
+
+只需要几行代码就可以创建一个着色转换字符。在自定义转换说明符部分，我们将讨论怎样在配置文件中注册一个转换字符。
+
+## Evaluators
+
+像之前提到的，当一个转换字符需要基于一个或者多个 [`EventEvaluator`](https://logback.qos.ch/xref/ch/qos/logback/core/boolex/EventEvaluator.html) 对象动态表现时，`EventEvaluator` 对象根据规则可以决定给定的日志事件是否匹配。
+
+让我们来回顾一下包含 `EventEvaluator` 的例子。下一个配置文件输出日志事件到控制台，显示日期，线程，日志级别，消息，以及调用者数据。获取日志事件调用者的信息成本比较高，只有当日志请求来源特定的 logger，或者消息包含特定的字符串时，我们才会这样做。换句话说，在调用者信息是多余的情况下，我们不应该去影响应用的性能。
+
+Evaluator 与 *评价表达式 (evaluation expressions)* 都会在[第七章](https://logback.qos.ch/manual/filters.html#evalutatorFilter) 详细介绍。如果你想利用 evaluator 去做一些有意思的事情，你必须看一下对这个的详细介绍。下面的例子基于 `JaninoEventEvaluator`，所以需要 [Janino 类库](http://docs.codehaus.org/display/JANINO/Home)。查看[相关文档](https://logback.qos.ch/setup.html#janino)进行设置。
+
+>   Example: *callerEvaluatorConfig.xml*
+
+```xml
+<configuration>
+  <evaluator name="DISP_CALLER_EVAL">
+    <expression>logger.contains("chapters.layouts") &amp;&amp; \
+      message.contains("who calls thee")</expression>
+  </evaluator>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender"> 
+    <encoder>
+      <pattern>
+        %-4relative [%thread] %-5level - %msg%n%caller{2, DISP_CALLER_EVAL}
+      </pattern>
+    </encoder>
+  </appender>
+
+  <root level="DEBUG"> 
+    <appender-ref ref="STDOUT" /> 
+  </root>
+</configuration>
+```
+
+上面的评价表达式用来匹配从名为 "chapters.layouts" logger 发出，并且消息中包含字符串 "who calls thee" 的日志事件。由于 XML 的编码规则，`&` 符号需要被转义为 `&amp;`。
+
+下面的类利用了配置文件中所提到的特性。
+
+>   Example: CallerEvaluatorExample.java
+
+```java
+package chapters.layouts;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.util.StatusPrinter;
+
+public class CallerEvaluatorExample {
+
+  public static void main(String[] args)  {
+    Logger logger = LoggerFactory.getLogger(CallerEvaluatorExample.class);
+    LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+    try {
+      JoranConfigurator configurator = new JoranConfigurator();
+      configurator.setContext(lc);
+      configurator.doConfigure(args[0]);
+    } catch (JoranException je) {
+      // StatusPrinter will handle this
+    }
+    StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
+
+    for (int i = 0; i < 5; i++) {
+      if (i == 3) {
+        logger.debug("who calls thee?");
+      } else {
+        logger.debug("I know me " + i);
+      }
+    }
+  }
+}
+```
+
