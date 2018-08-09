@@ -479,3 +479,28 @@ public class CallerEvaluatorExample {
 }
 ```
 
+上面的应用没有什么特别的地方。发出五条日志请求，第三条的的请求信息为 "who calls thee?"。
+
+通过命令：
+
+```bash
+java chapters.layouts.CallerEvaluatorExample src/main/java/chapters/layouts/callerEvaluatorConfig.xml
+```
+
+将会输出：
+
+```java
+0    [main] DEBUG - I know me 0 
+0    [main] DEBUG - I know me 1 
+0    [main] DEBUG - I know me 2 
+0    [main] DEBUG - who calls thee? 
+Caller+0   at chapters.layouts.CallerEvaluatorExample.main(CallerEvaluatorExample.java:28)
+0    [main] DEBUG - I know me 4
+```
+
+当发出日志请求时，会评价相应的日志事件。仅仅只有第三个日志事件会匹配到评价规则，所以它的调用者信息会被展示出来。对于其它的日志事件，由于没有匹配到评价规则，调用者信息不会被打印。
+
+可以通过更改表达式来应对真实的应用场景。举个🌰，你可以结合 logger 名与日志级别，日志级别在 *WARN* 以上的日志请求被当作一个敏感的部分，在金融业务模块中，我们可以这样做来获取调用者的信息。
+
+
+
