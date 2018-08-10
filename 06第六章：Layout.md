@@ -502,5 +502,100 @@ Caller+0   at chapters.layouts.CallerEvaluatorExample.main(CallerEvaluatorExampl
 
 可以通过更改表达式来应对真实的应用场景。举个🌰，你可以结合 logger 名与日志级别，日志级别在 *WARN* 以上的日志请求被当作一个敏感的部分，在金融业务模块中，我们可以这样做来获取调用者的信息。
 
+**重要：**当*评价表达式*为 **true** 时，通过 *caller* 转换字符，可以输出调用者的信息。
+
+考虑这么一种情况，当日志请求中包含异常信息时，它们的堆栈信息也会输出。但是，对于某些特定的异常信息，可能需要禁止输出堆栈信息。
+
+下面的代码创建了三条日志请求，每一条都包含一个异常信息。第二条的异常信息跟其它的不一样，它包含 "do not display this" 字符串，并且它的异常信息类型为 `chapters.layouts.TestException`。现在让我们来阻止第二条日志的打印。
+
+>   Example: *ExceptionEvaluatorExample.java*
+
+```java
+package chapters.layouts;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.joran.spi.JoranException;
+import ch.qos.logback.core.util.StatusPrinter;
+
+public class ExceptionEvaluatorExample {
+
+  public static void main(String[] args) {
+    Logger logger = LoggerFactory.getLogger(ExceptionEvaluatorExample.class);
+    LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+
+    try {
+      JoranConfigurator configurator = new JoranConfigurator();
+      configurator.setContext(lc);
+      lc.reset();
+      configurator.doConfigure(args[0]);
+    } catch (JoranException je) {
+       // StatusPrinter will handle this
+    }
+    StatusPrinter.printInCaseOfErrorsOrWarnings(lc);
+
+    for (int i = 0; i < 3; i++) {
+      if (i == 1) {
+        logger.debug("logging statement " + i, new TestException(
+            "do not display this"));
+      } else {
+        logger.debug("logging statement " + i, new Exception("display"));
+      }
+    }
+  }
+}
+```
+
+下面的配置文件通过评价表达式来匹配包含 `chapters.layouts.TextException` 类型的日志事件，也就是我们之前说要禁止的异常类型。
+
+>   Example: *exceptionEvaluatorConfig.xml*
+
+```xml
+<configuration>
+  <!-- evaluator 需要在 appender 前面定义 -->
+  <evaluator name="DISPLAY_EX_EVAL">
+    <expression>throwable != null &amp;&amp; throwable instanceof  \
+      chapters.layouts.TestException</expression>
+  </evaluator>
+        
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%msg%n%xEx{full, DISPLAY_EX_EVAL}</pattern>
+    </encoder>
+  </appender>
+
+  <root level="debug">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
+```
+
+>   作者原文里面是 %ex，应该是笔误
+
+通过这个配置文件，每当日志请求中包含一个 *chapters.layouts.TestException* 时，堆栈信息不会被输出。
+
+通过如下命令启动：
+
+```bash
+java chapters.layouts.ExceptionEvaluatorExample src/main/java/chapters/layouts/exceptionEvaluatorConfig.xml
+```
+
+将会输出：
+
+```java
+logging statement 0
+java.lang.Exception: display
+	at chapters.layouts.ExceptionEvaluatorExample.main(ExceptionEvaluatorExample.java:16)
+logging statement 1
+logging statement 2
+java.lang.Exception: display
+	at chapters.layouts.ExceptionEvaluatorExample.main(ExceptionEvaluatorExample.java:16)
+```
+
+>   作者原文还输出了 jar 包的信息，是因为打包后通过命令行执行的 (I think 😂)
+
 
 
