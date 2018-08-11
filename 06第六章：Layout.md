@@ -660,7 +660,24 @@ public class MySampleConverter extends ClassicConverter {
 java chapters.layouts.SampleLogging src/main/java/chapters/layouts/mySampleConverterConfig.xml 
 ```
 
+输出信息如下：
+
+```java
+26113953 [main] - Everything's going well
+26672034 [main] - maybe not quite...
+```
+
+可以看一下其它 `Converter` 的实现，例如 [`MDCConverter`](https://logback.qos.ch/xref/ch/qos/logback/classic/pattern/MDCConverter.html) ，去定制更加复杂的功能，如可选处理。想创建自己的颜色主题，可以看一下 [`HighlightingCompositeConverter`](https://logback.qos.ch/xref/ch/qos/logback/classic/pattern/color/HighlightingCompositeConverter.html)。
+
+## HTMLLayout
+
+[`HTMLLayout`](https://logback.qos.ch/xref/ch/qos/logback/classic/html/HTMLLayout.html) (包含在 logback-classic 中) 以 HTML 格式生成日志。`HTMLLayout` 通过 HTML 表格输出日志，每一行对应一条日志事件。
+
+下面是 `HTMLLayout` 通过默认的 CSS 样式生成的。
+
+![](images/htmlLayout0.gif)
 
 
 
+表格的列是通过转换模式指定的。关于转换模式的文档请查看 [PatternLayout](https://github.com/Volong/logback-chinese-manual/blob/master/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayout.md#patternlayout)。所以，你可以完全控制表格的内容以及格式。你可以选择并且展示任何跟 `PatternLayout` 组合的转换器。
 
