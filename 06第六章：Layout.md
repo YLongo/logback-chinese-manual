@@ -253,11 +253,11 @@ WARN  [main]: Message 2
 | **t / thread**                                               | 输出生成日志事件的线程名。                                   |
 | **X**{*key:-defaultVal*}<br />  **mdc**{*key:-defaultVal*}   | 输出生成日志事件的线程的 MDC (mapped diagnostic context)。<br />如果 **MDC** 转换字符后面跟着用花括号括起来的 kye，例 **%MDC{userid}**，那么 'userid' 所对应 MDC 的值将会输出。如果该值为 null，那么通过 :- 指定的[默认值](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%8F%98%E9%87%8F%E7%9A%84%E9%BB%98%E8%AE%A4%E5%80%BC) 将会输出。如果没有指定默认值，那么将会输出空字符串。<br />如果没有指定的 key，那么 MDC 的整个内容将会以 "key1=val1, key2=val2" 的格式输出。<br />查详情请见 [第八章](https://logback.qos.ch/manual/mdc.html) |
 | **ex**{*depth*}  **exception**{*depth*}  **throwable**{*depth*}   **ex**{depth, evaluator-1, ..., evaluator-n}  **exception**{depth, evaluator-1, ..., evaluator-n}  **throwable**{depth, evaluator-1, ..., evaluator-n} | 输出日志事件相关的堆栈信息，默认情况下会输出全部的堆栈信息。<br /> *throwable* 转换词可以接收如下的参数：<br /><ul><li>*short*：输出堆栈信息的第一行<br></li><li>*full*：输出全部的堆栈信息</li><li>任意整数：输出指定行数的堆栈信息</li></ul><br />下面是一些示例：<br /><table><thead><th>转换模式</th><th>结果</th></thead><tbody><tr><td>%ex</td><td><pre>mainPackage.foo.bar.TestException: Houston we have a problem<br />  at mainPackage.foo.bar.TestThrower.fire(TestThrower.java:22)<br />  at mainPackage.foo.bar.TestThrower.readyToLaunch(TestThrower.java:17)<br />  at mainPackage.ExceptionLauncher.main(ExceptionLauncher.java:38)</pre></td></tr><tr><td>%ex{short}</td><td><pre><br />mainPackage.foo.bar.TestException: Houston we have a problem<br />  at mainPackage.foo.bar.TestThrower.fire(TestThrower.java:22)</pre></td></tr><tr><td>%ex{full}</td><td><pre><br />mainPackage.foo.bar.TestException: Houston we have a problem<br />  at mainPackage.foo.bar.TestThrower.fire(TestThrower.java:22)<br />  at mainPackage.foo.bar.TestThrower.readyToLaunch(TestThrower.java:17)<br />  at mainPackage.ExceptionLauncher.main(ExceptionLauncher.java:38)</pre></td></tr><tr><td>%ex{2}</td><td><pre>mainPackage.foo.bar.TestException: Houston we have a problem<br />  at mainPackage.foo.bar.TestThrower.fire(TestThrower.java:22)<br />  at mainPackage.foo.bar.TestThrower.readyToLaunch(TestThrower.java:17)</pre></td></tr></tbody></table><br />在输出前，转换字符还可以使用给定的标准再次检验日志事件。例如，使用 **%ex{full, EX_DISPLAY_EVAL}**，只有 *EX_DISPLAY_EVAL* 返回一个否定的答案，才会输出全部的堆栈信息。evaluator 在接下来的文档中将会进一步叙述。<br />如果你没有指定 %throwable 或者其它跟 throwable 相关的转换字符，那么 `PatternLayout` 会在最后一个转换字符加上这个。因为堆栈信息非常的重要。如果你不想展示堆栈信息，那么可以使用 %nopex (作者原文为 $nopex) 可以替代 %throwable。详情见 %nopex。 |
-| **xEx**{*depth*}  <br />**xException**{*depth*}  **xThrowable**{*depth*}   <br />**xEx**{depth, evaluator-1, ..., evaluator-n}  <br />**xException**{depth, evaluator-1, ..., evaluator-n} <br />**xThrowable**{depth, evaluator-1, ..., evaluator-n} | 跟 %throwable 类似，只不过多了类的包信息。<br />在每个堆栈信息的末尾，多了包含 jar 文件的字符串，后面再加上具体的实现版本。这项创造性的技术是来自 [James Strachan](http://macstrac.blogspot.com/2008/09/better-stack-traces-in-java-with-log4j.html) 的建议。如果该信息不确定，那么类的包信息前面会有一个波浪号 (~)。<br />下面是一个例子：<br /><pre>java.lang.NullPointerException<br />  at com.xyz.Wombat(Wombat.java:57) ~[wombat-1.3.jar:1.3]<br />  at  com.xyz.Wombat(Wombat.java:76) ~[wombat-1.3.jar:1.3]<br />  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.5.0_06]<br />  at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) ~[na:1.5.0_06]<br />  at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) &#126;[na:1.5.0_06]<br />  at java.lang.reflect.Method.invoke(Method.java:585) &#126;[na:1.5.0_06]<br />  at org.junit.internal.runners.TestMethod.invoke(TestMethod.java:59) [junit-4.4.jar:na]<br />  at org.junit.internal.runners.MethodRoadie.runTestMethod(MethodRoadie.java:98) [junit-4.4.jar:na]<br />  ...etc </pre>logback 努力的去确保类的包信息正确的展示，即使是在复杂的类加载层次中。但是，一个不能保证信息的绝对正确，那么在这些数据的前面将会多一个波浪符 (\~)。因此，从理论上来说，打印的类的包信息跟真实的类的包信息是有区别的。在上面的例子中，类 Wombat 的包信息前面有一个波浪符，在实际的情况中，它真实包可能为  [wombat.jar:1.7]。<br />但是请注意潜在的性能损耗，计算[包信息默认是禁止的](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%9C%A8%E5%A0%86%E6%A0%88%E4%B8%AD%E5%B1%95%E7%A4%BA%E5%8C%85%E6%95%B0%E6%8D%AE)。当启用了计算包信息，那么 `PatternLayout` 将会自动认为在字符串模式的末尾 %xThrowable 替代了 %throwable。<br />根据用户的[反馈](https://jira.qos.ch/browse/LOGBACK-324)，Netbeans 会阻止包信息的打印。 |
+| <a  style="text-decoration:none" name="xThrowable" href="#xThrowable">**xEx**{*depth*}</a>  <br />**xException**{*depth*}  **xThrowable**{*depth*}   <br />**xEx**{depth, evaluator-1, ..., evaluator-n}  <br />**xException**{depth, evaluator-1, ..., evaluator-n} <br />**xThrowable**{depth, evaluator-1, ..., evaluator-n} | 跟 %throwable 类似，只不过多了类的包信息。<br />在每个堆栈信息的末尾，多了包含 jar 文件的字符串，后面再加上具体的实现版本。这项创造性的技术是来自 [James Strachan](http://macstrac.blogspot.com/2008/09/better-stack-traces-in-java-with-log4j.html) 的建议。如果该信息不确定，那么类的包信息前面会有一个波浪号 (~)。<br />下面是一个例子：<br /><pre>java.lang.NullPointerException<br />  at com.xyz.Wombat(Wombat.java:57) ~[wombat-1.3.jar:1.3]<br />  at  com.xyz.Wombat(Wombat.java:76) ~[wombat-1.3.jar:1.3]<br />  at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method) ~[na:1.5.0_06]<br />  at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39) ~[na:1.5.0_06]<br />  at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25) &#126;[na:1.5.0_06]<br />  at java.lang.reflect.Method.invoke(Method.java:585) &#126;[na:1.5.0_06]<br />  at org.junit.internal.runners.TestMethod.invoke(TestMethod.java:59) [junit-4.4.jar:na]<br />  at org.junit.internal.runners.MethodRoadie.runTestMethod(MethodRoadie.java:98) [junit-4.4.jar:na]<br />  ...etc </pre>logback 努力的去确保类的包信息正确的展示，即使是在复杂的类加载层次中。但是，一个不能保证信息的绝对正确，那么在这些数据的前面将会多一个波浪符 (\~)。因此，从理论上来说，打印的类的包信息跟真实的类的包信息是有区别的。在上面的例子中，类 Wombat 的包信息前面有一个波浪符，在实际的情况中，它真实包可能为  [wombat.jar:1.7]。<br />但是请注意潜在的性能损耗，计算[包信息默认是禁止的](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%9C%A8%E5%A0%86%E6%A0%88%E4%B8%AD%E5%B1%95%E7%A4%BA%E5%8C%85%E6%95%B0%E6%8D%AE)。当启用了计算包信息，那么 `PatternLayout` 将会自动认为在字符串模式的末尾 %xThrowable 替代了 %throwable。<br />根据用户的[反馈](https://jira.qos.ch/browse/LOGBACK-324)，Netbeans 会阻止包信息的打印。 |
 | **nopex**<br />**nopexception**                              | 这个转换字符不会输出任何数据，因此，它可以用来有效忽略异常信息。<br />%nopex 转换字符允许用户重写 `PatternLayout` 内部的安全机制，该机制将会在没有指定其它处理异常的转换字符时，默认添加 %xThrowable。 |
 | **marker**                                                   | 输出与日志请求相关的标签。<br />一旦标签包含子标签，那么转换器将会根据下面的格式展示父标签与子标签。<br />*parentName [child1, child2]* |
 | **property{key}**                                            | 输出属性 *key* 所对应的值。相关定义参见 [定义变量](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%8F%98%E9%87%8F%E6%9B%BF%E6%8D%A2) 以及[作用域](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E4%BD%9C%E7%94%A8%E5%9F%9F)。如果 key 在 logger context 中没有找到，那么将会去系统属性中找。<br />*key* 没有默认值，如果缺失，则会展示 " Property_HAS_NO_KEY" 的错误信息。 |
-| <a name="replace" href="#replace">**replace(p){r, t}**</a>   | 在子模式 'p' 产生的字符中，将所有出现正则表达式 'r' 的地方替换为 't'。例如，"%replace(%msg){'\s', ''}" 将会移除事件消息中所有空格。<br />模式 'p' 可以是任意复杂的甚至由多个转换字符组成。例如，"%replace(%logger %msg){'\.', '/'}" 将会替换 logger 以及消息中所有的点为斜杆。 |
+| <a  style="text-decoration:none" name="replace" href="#replace">**replace(p){r, t}**</a> | 在子模式 'p' 产生的字符中，将所有出现正则表达式 'r' 的地方替换为 't'。例如，"%replace(%msg){'\s', ''}" 将会移除事件消息中所有空格。<br />模式 'p' 可以是任意复杂的甚至由多个转换字符组成。例如，"%replace(%logger %msg){'\.', '/'}" 将会替换 logger 以及消息中所有的点为斜杆。 |
 | **rEx**{*depth*}  **rootException**{*depth*}   **rEx**{depth, evaluator-1, ..., evaluator-n}  **rootException**{depth, evaluator-1, ..., evaluator-n} | 输出与日志事件相关的堆栈信息，根异常将会首先输出，而是标准的"根异常最后输出"。下面是一个输出例子：<br /><pre>java.lang.NullPointerException<br />  at com.xyz.Wombat(Wombat.java:57) ~[wombat-1.3.jar:1.3]<br />  at com.xyz.Wombat(Wombat.java:76) ~[wombat-1.3.jar:1.3]<br />Wrapped by: org.springframework.BeanCreationException: Error creating bean with name 'wombat': <br />  at org.springframework.AbstractBeanFactory.getBean(AbstractBeanFactory.java:248) [spring-2.0.jar:2.0]<br />  at org.springframework.AbstractBeanFactory.getBean(AbstractBeanFactory.java:170) [spring-2.0.jar:2.0]<br />  at org.apache.catalina.StandardContext.listenerStart(StandardContext.java:3934) [tomcat-6.0.26.jar:6.0.26]</pre>%rootException 跟 %xException 类似，也允许一些可选的参数，包括深度以及 evaluator。它也会输出包信息。简单来说，%rootException 跟 %xException 非常的类似，仅仅是异常输出的顺序完全相反。<br />  %rootException 的作者 Tomasz Nurkiewicz 在他的博客说明了他所作的贡献 ["Logging exceptions root cause first"](http://nurkiewicz.blogspot.com/2011/09/logging-exceptions-root-cause-first.html)。 |
 
 #### % 有特殊的含义
@@ -596,6 +596,71 @@ java.lang.Exception: display
 ```
 
 >   作者原文还输出了 jar 包的信息，是因为打包后通过命令行执行的 (I think 😂)
+
+第二条日志没有堆栈信息，因为我们禁止 `TextException` 类型的堆栈信息。每条堆栈信息的最后用综括号包裹起来的是具体的[包信息](https://github.com/Volong/logback-chinese-manual/blob/master/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayout.md#xThrowable)。
+
+**`注意：`** 当 **%ex** 转换说明符中的评价表达式为 **false** 时，堆栈信息才会输出。
+
+## 自定义转换说明符
+
+我们可以在 `PatternLayout` 中使用内置的转换字符。我们也可以使用自己新建的转换字符。
+
+新建一个自定义的转换字符需要两步。
+
+#### 第一步
+
+首先，你必须继承 `ClassicConverter` 类。[`ClassicConverter`](https://logback.qos.ch/xref/ch/qos/logback/classic/pattern/ClassicConverter.html) 对象负责从 `ILoggingEvent` 实例中抽取信息并输出字符串。例如，%logger 对应的转换器 [`LoggerConverter`](https://logback.qos.ch/xref/ch/qos/logback/classic/pattern/LoggerConverter.html)，可以从 `ILoggingEvent` 从抽取 logger 的名字，返回一个字符串。它可以缩写 logger 的名字。
+
+下面是一个自定义的转换器，返回从创建开始经过的时间，单位为纳秒。
+
+> Example: MySampleConverter
+
+```java
+public class MySampleConverter extends ClassicConverter {
+
+  long start = System.nanoTime();
+
+  @Override
+  public String convert(ILoggingEvent event) {
+    long nowInNanos = System.nanoTime();
+    return Long.toString(nowInNanos-start);
+  }
+}
+```
+
+这个实现非常简单。`MySampleConverter` 继承了 `ClassicConverter` 并实现了 `convert` 方法，返回从创建开始经过多少纳秒。
+
+#### 第二步
+
+第二步，我们必须让 logback 知道这个新建的 `Converter`。所以我们需要在配置文件中进行声明，如下：
+
+> Example: *mySampleConverterConfig.xml*
+
+```xml
+<configuration>
+
+  <conversionRule conversionWord="nanos" 
+                  converterClass="chapters.layouts.MySampleConverter" />
+        
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%-6nanos [%thread] - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
+```
+
+执行命令如下：
+
+```bash
+java chapters.layouts.SampleLogging src/main/java/chapters/layouts/mySampleConverterConfig.xml 
+```
+
+
 
 
 
