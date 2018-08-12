@@ -681,3 +681,37 @@ java chapters.layouts.SampleLogging src/main/java/chapters/layouts/mySampleConve
 
 表格的列是通过转换模式指定的。关于转换模式的文档请查看 [PatternLayout](https://github.com/Volong/logback-chinese-manual/blob/master/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayout.md#patternlayout)。所以，你可以完全控制表格的内容以及格式。你可以选择并且展示任何跟 `PatternLayout` 组合的转换器。
 
+一个值得注意的问题是使用 `PatternLayout` 中的 `HTMLLayout` 时，不要使用空格或者其它的字面量来分隔转换说明符。转换模式中的每个说明符都会被当做一个单独的列。同样的转换模式中的每个文本块也会被当作一个单独的列，这会占用屏幕的空间。
+
+下面的 `HTMLLayout` 相关的配置：
+
+> Example: *htmlLayoutConfig1.xml*
+
+```xml
+<configuration debug="true">
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+      <layout class="ch.qos.logback.classic.html.HTMLLayout">
+        <pattern>%relative%thread%mdc%level%logger%msg</pattern>
+      </layout>
+    </encoder>
+    <file>test.html</file>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="FILE" />
+  </root>
+</configuration>
+```
+
+[TrivialMain](https://logback.qos.ch/xref/chapters/layouts/TrivialMain.html) 包含一些消息以及一个结束异常。执行以下命令：
+
+```bash
+java chapters.layouts.TrivialMain src/main/java/chapters/layouts/htmlLayoutConfig1.xml
+```
+
+将会当前文件夹创建一个 *test.html* 文件。*test.html* 文件的内容与下面类似：
+
+![](images/htmlLayout1.png)
+
+### 堆栈
