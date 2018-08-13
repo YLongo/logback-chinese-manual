@@ -714,4 +714,15 @@ java chapters.layouts.TrivialMain src/main/java/chapters/layouts/htmlLayoutConfi
 
 ![](images/htmlLayout1.png)
 
-### 堆栈
+### 堆栈信息
+
+如果你使用 *%ex* 转换字符去展示堆栈信息，那么将会创建一个列来展示堆栈信息。在大多数的情况下，列会为空，那么就会浪费屏幕的空间。而且，在单独的列打印堆栈信息，输出的结果阅读起来有难度。但是，*%ex* 转换字符不是唯一一个用来展示堆栈信息的。
+
+>   原文第一个 %ex 为 %em
+
+一个更好的解决办法是通过实现 `IThrowableRenderer` 接口。实现的接口可以分配给 `HTMLLayout` 来管理相关的异常数据。默认情况下，会给每个 `HTMLLayout` 实例分配一个 [`DefaultThrowableRenderer`](https://logback.qos.ch/xref/ch/qos/logback/classic/html/DefaultThrowableRenderer.html)。它将异常的堆栈信息写入到表格新的一行，并且非常易读，就跟上面展示的表格一样。
+
+如果在某些情况下，你仍然想要使用 *%ex*，那么你可以在配置文件中指定 [`NOPThrowableRenderer`](https://logback.qos.ch/xref/ch/qos/logback/core/html/NOPThrowableRenderer.html) 来禁止在单独一行展示堆栈信息。我们不理解为什么你要这样做，但是你开心就好。
+
+### CSS
+
