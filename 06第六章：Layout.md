@@ -726,3 +726,70 @@ java chapters.layouts.TrivialMain src/main/java/chapters/layouts/htmlLayoutConfi
 
 ### CSS
 
+`HTMLLayout` 创建的 HTML 是通过 CSS 来控制样式的。在缺少指定命令的情况下，`HTMLLayout` 会使用内部默认的样式。但是，你可以告诉 `HTMLLayout` 去使用外部的 CSS 文件。通过在 `<layout>` 元素内置 `<cssBuilder>` 元素可以做到。如下所示：
+
+```xml
+<layout class="ch.qos.logback.classic.html.HTMLLayout">
+  <pattern>%relative...%msg</pattern>
+  <cssBuilder class="ch.qos.logback.classic.html.UrlCssBuilder">
+    <!-- css 文件的路径 -->
+    <url>http://...</url>
+  </cssBuilder> 
+</layout>
+```
+
+`HTMLLayout` 通常与 `SMTPAppender` 配合使用，所以邮件可以被格式化成 HTML。
+
+## Log4j XMLLayout
+
+[XMLLayout](https://logback.qos.ch/xref/ch/qos/logback/classic/log4j/XMLLayout.html) (logback-classic 的一部分) 生成一个 log4j.dtd 格式的文件，用来与类似 [Chainsaw](http://logging.apache.org/chainsaw/index.html) 以及 [Vigilog](http://vigilog.sourceforge.net/) 这样的工具进行交互操作，这些工具可以处理由 [log4j XMLLayout](http://logging.apache.org/log4j/1.2/apidocs/org/apache/log4j/xml/XMLLayout.html) 生成的文件。
+
+跟 log4j 1.2.15 版本的 XMLLayout 一样，logback-classic 中的 XMLLayout 接收两个 boolean 属性：`locationInfo` 与 `properties`。设置 `locationInfo` 的值为 true，可以在每个事件中开启包含位置信息 (调用者的数据)。设置 `properties` 为 true，可以开启包含 MDC 信息。默认情况下，两个属性都设置为 false。
+
+下面是一个示例：
+
+>   Example: *log4jXMLLayout.xml* 
+
+```xml
+<configuration>
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>test.xml</file>
+    <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+      <layout class="ch.qos.logback.classic.log4j.XMLLayout">
+        <locationInfo>true</locationInfo>
+      </layout>
+    </encoder> 
+  </appender> 
+
+  <root level="DEBUG">
+    <appender-ref ref="FILE" />
+  </root>
+</configuration> 
+```
+
+# Logback access
+
+大多数 logback-access 的 layout 仅仅只是 logback-classic 的 layout 的改编。logback-classic 与 logback-access 模块定位不同的需求，但是都提供了类似的功能。
+
+## 写你自己的 layout
+
+在 logback-access 中写一个定制的 `Layout` 与在 logback-classic 的 `Layout` 中几乎一致。
+
+### PatternLayout
+
+配置 logback-access 中的 [`PatternLayout`](https://logback.qos.ch/xref/ch/qos/logback/access/PatternLayout.html)，与在 logback-classic 中配置相同。但是它添加了一些额外的转换说明符来适应 HTTP 请求以及 HTTP 响应中特定信息位的记录。
+
+下表是 logback-access 中 `PatternLayout` 的相关转换说明符。
+
+| 转换字符                    | 效果                                                         |
+| :-------------------------- | ------------------------------------------------------------ |
+| **a / remoteIP**            | 远程 IP 地址                                                 |
+| **A / localIP**             | 本地 IP 地址                                                 |
+| **b / B / bytesSent**       | 响应内容的长度                                               |
+| **h / clientHost**          | 远程 host                                                    |
+| **H / protocol**            | 请求协议                                                     |
+| **l**                       | 远程日志名，在 logback-access 中，转换器总是返回 "-"         |
+| **reqParameter{paramName}** | 响应参数。<br />这个转换字符在花括号中接受一个参数，在请求中寻找相应的参数。<br /> **%reqParameter{input_data}** 展示相应的参数。 |
+|                             |                                                              |
+|                             |                                                              |
+
