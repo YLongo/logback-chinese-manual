@@ -781,15 +781,64 @@ java chapters.layouts.TrivialMain src/main/java/chapters/layouts/htmlLayoutConfi
 
 下表是 logback-access 中 `PatternLayout` 的相关转换说明符。
 
-| 转换字符                    | 效果                                                         |
-| :-------------------------- | ------------------------------------------------------------ |
-| **a / remoteIP**            | 远程 IP 地址                                                 |
-| **A / localIP**             | 本地 IP 地址                                                 |
-| **b / B / bytesSent**       | 响应内容的长度                                               |
-| **h / clientHost**          | 远程 host                                                    |
-| **H / protocol**            | 请求协议                                                     |
-| **l**                       | 远程日志名，在 logback-access 中，转换器总是返回 "-"         |
-| **reqParameter{paramName}** | 响应参数。<br />这个转换字符在花括号中接受一个参数，在请求中寻找相应的参数。<br /> **%reqParameter{input_data}** 展示相应的参数。 |
-|                             |                                                              |
-|                             |                                                              |
+| 转换字符                       | 效果                                                         |
+| :----------------------------- | ------------------------------------------------------------ |
+| **a / remoteIP**               | 远程 IP 地址                                                 |
+| **A / localIP**                | 本地 IP 地址                                                 |
+| **b / B / bytesSent**          | 响应内容的长度                                               |
+| **h / clientHost**             | 远程 host                                                    |
+| **H / protocol**               | 请求协议                                                     |
+| **l**                          | 远程日志名，在 logback-access 中，转换器总是返回 "-"         |
+| **reqParameter{paramName}**    | 响应参数。<br />这个转换字符在花括号中接受一个参数，在请求中寻找相应的参数。<br /> **%reqParameter{input_data}** 展示相应的参数。 |
+| **i{header} / header{header}** | 请求头。<br /> **%header{Referer}** 显示请求的来源。<br />如果没有指定选项，将会展示所有可用的请求头 |
+| **m / requestMethod**          | 请求方法                                    |
+| **r / requestURL**              | 请求 URL                                         |
+| **s / statusCode**              | 请求状态码                             |
+| **D / elapsedTime**             | 请求所耗费的时间，单位为毫秒 |
+| **T / elapsedSeconds**          | 请求所耗费的时间，单位为秒 |
+| **t / date**                    | 输出日志事件的日期。日期说明符需要用花括号指定。日期格式来源 ` java.text.SimpleDateFormat`。*ISO8601* 也是一个有效的值。<br />例如，**%t{HH:mm:ss,SSS}** 或者 **%t{dd MMM yyyy ;HH:mm:ss,SSS}**。如果没有指定日期格式字符，那么会默认指定为 **%t{dd/MMM/yyyy:HH:mm:ss Z}** |
+| **u / user**                    | 远程用户                                       |
+| **q / queryString**             | 请求查询字符串，前缀为 '?'   |
+| **U / requestURI**              | 请求 URI                                     |
+| **S / sessionID**               | Session ID.                                                  |
+| **v / server**                  | 服务器名                                             |
+| **I / threadName**              | 处理该条请求的线程 |
+| **localPort**                   | 本地端口                                              |
+| **reqAttribute{attributeName}** | 请求的属性。<br />**%reqAttribute{SOME_ATTRIBUTE}** 展示相应的属性。 |
+| **reqCookie{cookie}**           | 请求 cookie。<br />**%cookie{COOKIE_NAME}** 展示相应的 cookie。 |
+| **responseHeader{header}**      | 响应头。<br />**%header{Referer}** 展示响应的来源。 |
+| **requestContent**              | 展示请求的内容，即请求的 `InputStream`。它与 [`TeeFilter`](https://logback.qos.ch/xref/ch/qos/logback/access/servlet/TeeFilter.html) 结合使用。一个使用  [`TeeHttpServletRequest`](https://logback.qos.ch/xref/ch/qos/logback/access/servlet/TeeHttpServletRequest.html) 替代  `HttpServletRequest` 的  javax.servlet.Filter。前者可以多次访问请求的 `InputStream` 而不会丢失内容。 |
+| **fullRequest**                 | 请求的数据。包括所有的请求头以及请求内容。 |
+| **responseContent**             | 展示响应的内容，也就是响应的 `InputStream`。 它与 [`TeeFilter`](https://logback.qos.ch/xref/ch/qos/logback/access/servlet/TeeFilter.html) 结合使用。一个使用  [`TeeHttpServletResponse`](https://logback.qos.ch/xref/ch/qos/logback/access/servlet/TeeHttpServletResponse.html) 替代 `HttpServletResponse` 的  `javax.servlet.Filter`。前者可以多次访问响应 (原文为请求) 的 `InputStream` 而不会丢失内容。 |
+| **fullResponse**                | 获取响应所有可用的数据，包括所有的响应头以及响应内容。 |
 
+logback-access 的 `PatternLayout` 能够识别三个关键字，有点类似快捷键。
+
+| 关键字            | 相等的转换模式                                            |
+| ----------------- | --------------------------------------------------------- |
+| *common* or *CLF* | *%h %l %u [%t] "%r" %s %b*                                |
+| *combined*        | *%h %l %u [%t] "%r" %s %b "%i{Referer}" "%i{User-Agent}"* |
+
+关键字 *common* 对应 *'%h %l %u [%t] "%r" %s %b'*，分别展示客户端主机，远程日志名，用户，日期，请求 URL，状态码，以及响应内容的长度。
+
+关键字 *combined* 对应 *'%h %l %u [%t] "%r" %s %b "%i{Referer}" "%i{User-Agent}"'*。跟 *common* 有点类似，但是它还会再显示两个请求头，referer 以及 user-agent。
+
+### HTMLLayout
+
+logback-access 中的 [`HTMLLayout`](https://logback.qos.ch/xref/ch/qos/logback/access/html/HTMLLayout.html) 与 logback-classic 中的 [`HTMLLayout`](https://logback.qos.ch/manual/layouts.html#ClassicHTMLLayout) 有点类似。
+
+默认情况下，它会创建一个包含如下数据的表格：
+
+-   请求 IP (Remote IP)
+-   日期 (Date)
+-   请求 URL (Request URL)
+-   状态码 (Status code)
+-   内容长度 (Content Length)
+
+下面是 logback-access 中的 `HTMLLayout` 输出的一个例子：
+
+![](images/htmlLayoutAccess.gif)
+
+还有比真实的例子更好的例子吗？我们自己的 log4j.properties 用于 logback [翻译器](http://logback.qos.ch/translator/)，充分的利用了 logback-access 在线演示 `RollingFileAppender` 与 `HTMLLayout` 的输出。
+
+每一个新的用户请求 [翻译器](http://logback.qos.ch/translator/) 这个网站，一个新的条目就会添加到访问日志，你可以通过[这个链接](https://logback.qos.ch/translator/logs/access.html) 查看。
