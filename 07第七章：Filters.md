@@ -51,5 +51,65 @@ reqular 过滤器继承自 [`Filter`](https://logback.qos.ch/xref/ch/qos/logback
 
 ### LevelFilter
 
+[`LevelFilter`](https://logback.qos.ch/xref/ch/qos/logback/classic/filter/LevelFilter.html) 基于级别来过滤日志事件。如果事件的级别与配置的级别相等，过滤器会根据配置的 `onMatch` 与 `onMismatch` 属性，接受或者拒绝事件。如下是一个简单的示例：
+
+>   Example: *levelFilterConfig.xml*
+
+```xml
+<configuration>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>INFO</level>
+      <onMatch>ACCEPT</onMatch>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+    <encoder>
+      <pattern>
+        %-4relative [%thread] %-5level %logger{30} - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE" />
+  </root>
+</configuration>
+```
+
+### ThresholdFilter
+
+[`ThresholdFilter`](https://logback.qos.ch/xref/ch/qos/logback/classic/filter/ThresholdFilter.html) 基于给定的临界值来过滤事件。如果事件的级别等于或高于给定的临界值，当调用 `decide()` 时，`ThresholdFilter` 将会返回 NEUTRAL。但是事件的级别低于临界值将会被拒绝。下面是一个简单的例子：
+
+>   Example: *thresholdFilterConfig.xml*
+
+```xml
+<configuration>
+  <appender name="CONSOLE"
+    class="ch.qos.logback.core.ConsoleAppender">
+    <!-- deny all events with a level below INFO, that is TRACE and DEBUG -->
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>INFO</level>
+    </filter>
+    <encoder>
+      <pattern>
+        %-4relative [%thread] %-5level %logger{30} - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE" />
+  </root>
+</configuration>
+```
+
+## EvaluatorFilter
+
+[`EvaluatorFilter`](https://logback.qos.ch/xref/ch/qos/logback/core/filter/EvaluatorFilter.html) 是一个通用的过滤器，它封装了一个 `EventEvaluator`。顾名思义，[`EventEvaluator`](https://logback.qos.ch/xref/ch/qos/logback/core/boolex/EventEvaluator.html) 根据给定的标准来评估给定的事件是否符合标准。在 match 和 mismatch 的情况下，`EvaluatorFilter` 将会返回 `onMatch` 或 `onMismatch` 指定的值。
+
+注意 `EventEvaluator` 是一个抽象类。你可以通过继承 `EventEvaluator` 来实现自己事件评估逻辑。
+
+
+
+
+
 
 
