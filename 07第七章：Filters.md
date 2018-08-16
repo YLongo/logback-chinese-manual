@@ -118,10 +118,37 @@ reqular 过滤器继承自 [`Filter`](https://logback.qos.ch/xref/ch/qos/logback
 下面是一个比较复杂的例子：
 
 ```xml
+<configuration>
+    
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">      
+      <evaluator class="ch.qos.logback.classic.boolex.GEventEvaluator"> 
+        <expression>
+           e.level.toInt() >= WARN.toInt() &amp;&amp;  <!-- 在 XML 中替代 && -->
+           !(e.mdc?.get("req.userAgent") =~ /Googlebot|msnbot|Yahoo/ )
+        </expression>
+      </evaluator>
+      <OnMismatch>DENY</OnMismatch>
+      <OnMatch>NEUTRAL</OnMatch>
+    </filter>
+    <encoder>
+      <pattern>
+        %-4relative [%thread] %-5level %logger - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
 
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
 ```
 
+上面的过滤器会让级别在 WARN 及以上的日志事件在控制台显示，除非是由于来自 Google，MSN，Yahoo 的网络爬虫导致的错误。它通过检查与事件相关的 MDC 包含 "req.userAgent" 的值是否匹配 `/Googlebot|msbbot|Yahoo/` 正则表达式。因为 MDC 的映射可能为 null，所以我们使用 Groovy 的[安全解引用操作符](http://groovy.codehaus.org/Null+Object+Pattern)，也就是 `?.` 操作符。这个相等的逻辑在 Java 中的表达式更长。
 
+如果你好奇 user agent 标识符作为值怎样被插入到 key 为 "req.userAgent " 的 MDC 中，那么就会涉及到 logback 为了这个目的附带了一个名为 [`MDCInsertingServletFilter`](https://logback.qos.ch/manual/mdc.html#mis) 的 servlet 过滤器。它将会在接下来的章节中描述。
+
+### JaninoEventEvaluator
 
 
 
