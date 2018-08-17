@@ -156,19 +156,19 @@ logback-classic 附带的另外一个 `EventEvaluator` 的具体实现名为 [Ja
 
 评估表达式对当前日志事件进行评估。logback-classic 自动导出日志事件的各种字段作为变量，为了可以从评估表达式访问。这些导出的变量是大小写敏感的，如下表所示：
 
-| 名字             | 类型                                                         | 描述               |
-| ---------------- | ------------------------------------------------------------ | ------------------ |
-| event            | `LoggingEvent`                                               |                    |
-| message          | `String`                                                     |                    |
-| formattedMessage | `String`                                                     |                    |
-| logger           | `String`                                                     | logger 的名字      |
-| loggerContext    | [`LoggerContextVO`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/LoggerContextVO.html) |                    |
-| level            | `int`                                                        |                    |
-| timeStamp        | `long`                                                       | 日志事件创建的时间 |
-| marker           | `Marker`                                                     |                    |
-| mdc              | `Map`                                                        |                    |
-| throwable        | java.lang.Throwable                                          |                    |
-| throwableProxy   | [`IThrowableProxy`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/IThrowableProxy.html) |                    |
+| 名字             | 类型                                                         | 描述                                                         |
+| ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| event            | `LoggingEvent`                                               | 日志请求的原始日志事件。下面所有的变量都来自这个日志事件。例如，`event.getMessage()` 返回的字符串跟下面的 `message` 变量返回的字符串一样。 |
+| message          | `String`                                                     | 日志请求的原始信息。例如，对于 logger *I*，当你写的是 I.info("Hello {}", name); 时，name 的值被指定为 "Alice"，消息就为 "Hello {}"。 |
+| formattedMessage | `String`                                                     | 日志请求中格式化后的消息。例如，对于 logger *I*，当你写的是 I.info("Hello {}", name); 时，name 的值被指定为 "Alice"，格式化后的消息就为 "Hello Alice"。 |
+| logger           | `String`                                                     | logger 的名字                                                |
+| loggerContext    | [`LoggerContextVO`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/LoggerContextVO.html) | 日志事件属于 logger 上下文中哪个受限的视图 (值对象)          |
+| level            | `int`                                                        |                                                              |
+| timeStamp        | `long`                                                       | 日志事件创建的时间                                           |
+| marker           | `Marker`                                                     |                                                              |
+| mdc              | `Map`                                                        |                                                              |
+| throwable        | java.lang.Throwable                                          |                                                              |
+| throwableProxy   | [`IThrowableProxy`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/IThrowableProxy.html) |                                                              |
 
 
 
