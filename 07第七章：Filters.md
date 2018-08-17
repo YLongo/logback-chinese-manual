@@ -150,7 +150,25 @@ reqular 过滤器继承自 [`Filter`](https://logback.qos.ch/xref/ch/qos/logback
 
 ### JaninoEventEvaluator
 
+logback-classic 附带的另外一个 `EventEvaluator` 的具体实现名为 [JaninoEventEvaluator](https://logback.qos.ch/xref/ch/qos/logback/classic/boolex/JaninoEventEvaluator.html)，它接受任意返回布尔值的 Java 代码块作为评判标准。我们把这种 Java 布尔表达式称为 "*评估表达式*"。评估表达式在事件过滤中可以更加的灵活。`JaninoEventEvaluator` 需要 [Janino 类库](http://docs.codehaus.org/display/JANINO/Home)。请参见[相关章节](https://logback.qos.ch/setup.html#janino)进行设置。跟 `JaninoEventEvaluator` 相比，`GEventEvaluator` 使用 Groovy 语言，使用起来非常方便。但是 `JaninoEventEvaluator` 将使用运行更快的等效表达式。
 
+评估表达式在解析配置文件期间被动态编译。作为用户，不需要考虑实际的情况。但是，你需要确保你的 Java 表达式是有效的，保证它的评估结果为 true 或 false。
+
+评估表达式对当前日志事件进行评估。logback-classic 自动导出日志事件的各种字段作为变量，为了可以从评估表达式访问。这些导出的变量是大小写敏感的，如下表所示：
+
+| 名字             | 类型                                                         | 描述               |
+| ---------------- | ------------------------------------------------------------ | ------------------ |
+| event            | `LoggingEvent`                                               |                    |
+| message          | `String`                                                     |                    |
+| formattedMessage | `String`                                                     |                    |
+| logger           | `String`                                                     | logger 的名字      |
+| loggerContext    | [`LoggerContextVO`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/LoggerContextVO.html) |                    |
+| level            | `int`                                                        |                    |
+| timeStamp        | `long`                                                       | 日志事件创建的时间 |
+| marker           | `Marker`                                                     |                    |
+| mdc              | `Map`                                                        |                    |
+| throwable        | java.lang.Throwable                                          |                    |
+| throwableProxy   | [`IThrowableProxy`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/IThrowableProxy.html) |                    |
 
 
 
