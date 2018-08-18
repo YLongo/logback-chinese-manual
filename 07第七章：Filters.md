@@ -163,11 +163,11 @@ logback-classic 附带的另外一个 `EventEvaluator` 的具体实现名为 [Ja
 | formattedMessage | `String`                                                     | 日志请求中格式化后的消息。例如，对于 logger *I*，当你写的是 I.info("Hello {}", name); 时，name 的值被指定为 "Alice"，格式化后的消息就为 "Hello Alice"。 |
 | logger           | `String`                                                     | logger 的名字                                                |
 | loggerContext    | [`LoggerContextVO`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/LoggerContextVO.html) | 日志事件属于 logger 上下文中哪个受限的视图 (值对象)          |
-| level            | `int`                                                        |                                                              |
+| level            | `int`                                                        | 事件级别对应的 int 值。用来创建包含级别的表达式。默认值是 DEBUG，INFO，WARN 以及 ERROR 也是有效的。所以 *level > INFO* 是有效的表达式。 |
 | timeStamp        | `long`                                                       | 日志事件创建的时间                                           |
-| marker           | `Marker`                                                     |                                                              |
-| mdc              | `Map`                                                        |                                                              |
-| throwable        | java.lang.Throwable                                          |                                                              |
+| marker           | `Marker`                                                     | 与日志请求相关的 `Marker` 对象。注意，marker 可能会为 null，因此你需要对这种情况进行检查，进而避免  `NullPointerException`。 |
+| mdc              | `Map`                                                        | 创建日志事件时包含的所有的 MDC 值的一个映射。可以通过 *mdc.get("myKey")* 来获取 MDC 中对应的值。在 0.9.30 版本的 logback-classic，mdc 变量永远不会为 null。<br />`java.util.Map` 类型是非参数化的，因为 Janino 不支持泛型。因此，`mdc.get()` 返回值的类型是 `Object` 而不是 `String`。但是可以将返回值强制转换为 `String`。例如， `((String) mdc.get("k")).contains("val")`。 |
+| throwable        | java.lang.Throwable                                          | 如果日志事件没有相关的异常，那么变量 "throwable" 的值为 null。 |
 | throwableProxy   | [`IThrowableProxy`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/IThrowableProxy.html) |                                                              |
 
 
