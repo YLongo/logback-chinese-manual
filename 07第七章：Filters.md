@@ -170,5 +170,11 @@ logback-classic 附带的另外一个 `EventEvaluator` 的具体实现名为 [Ja
 | throwable        | java.lang.Throwable                                          | 如果日志事件没有相关的异常，那么变量 "throwable" 的值为 null。"throwable" 不可以被序列化。所以在远程服务器上，这个值永远为 null。想要使用与位置无关的表达式，可以使用下面的 `throwableProxy`。 |
 | throwableProxy   | [`IThrowableProxy`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/IThrowableProxy.html) | 日志事件的异常代理。如果日志事件没有相关的异常，那么 `throwableProxy` 的值为 null。与 "throwable" 相反，即使在远程服务器上序列化之后，日志事件相关的异常也不会为 null。 |
 
+下面是具体的例子。
 
+> Example: *basicEventEvaluator.xml*
+
+```xml
+
+```
 
