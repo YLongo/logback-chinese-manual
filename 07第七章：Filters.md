@@ -167,8 +167,8 @@ logback-classic 附带的另外一个 `EventEvaluator` 的具体实现名为 [Ja
 | timeStamp        | `long`                                                       | 日志事件创建的时间                                           |
 | marker           | `Marker`                                                     | 与日志请求相关的 `Marker` 对象。注意，marker 可能会为 null，因此你需要对这种情况进行检查，进而避免  `NullPointerException`。 |
 | mdc              | `Map`                                                        | 创建日志事件时包含的所有的 MDC 值的一个映射。可以通过 *mdc.get("myKey")* 来获取 MDC 中对应的值。在 0.9.30 版本的 logback-classic，mdc 变量永远不会为 null。<br />`java.util.Map` 类型是非参数化的，因为 Janino 不支持泛型。因此，`mdc.get()` 返回值的类型是 `Object` 而不是 `String`。但是可以将返回值强制转换为 `String`。例如， `((String) mdc.get("k")).contains("val")`。 |
-| throwable        | java.lang.Throwable                                          | 如果日志事件没有相关的异常，那么变量 "throwable" 的值为 null。"throwable" 不可以被序列化。所以在远程服务器上， |
-| throwableProxy   | [`IThrowableProxy`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/IThrowableProxy.html) |                                                              |
+| throwable        | java.lang.Throwable                                          | 如果日志事件没有相关的异常，那么变量 "throwable" 的值为 null。"throwable" 不可以被序列化。所以在远程服务器上，这个值永远为 null。想要使用与位置无关的表达式，可以使用下面的 `throwableProxy`。 |
+| throwableProxy   | [`IThrowableProxy`](https://logback.qos.ch/xref/ch/qos/logback/classic/spi/IThrowableProxy.html) | 日志事件的异常代理。如果日志事件没有相关的异常，那么 `throwableProxy` 的值为 null。与 "throwable" 相反，即使在远程服务器上序列化之后，日志事件相关的异常也不会为 null。 |
 
 
 
