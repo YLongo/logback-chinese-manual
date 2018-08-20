@@ -454,4 +454,27 @@ loback-classic 附带了几个 `TurboFilter` 类可以开箱即用。[`MDCFilter
 java chapters.filters.FilterEvents src/main/java/chapters/filters/turboFilters.xml
 ```
 
-在之前我们看到 [`FilterEvents`](https://logback.qos.ch/xref/chapters/filters/FilterEvents.html) 输出了 10 条日志请求，编号 0 到 9。除了第 3 条与第 6 条，所有的请求都是 INFO 级别的。
+在之前我们看到 [`FilterEvents`](https://logback.qos.ch/xref/chapters/filters/FilterEvents.html) 输出了 10 条日志请求，编号 0 到 9。除了第 3 条与第 6 条，所有的请求都是 INFO 级别的，与 root logger 的级别一致。第 3 条日志请求是 `DEBUG` 级别的，在有效级别之下。但是，因为 MDC 的 key "username" 在第三条请求之前设置为 "sebastien"，之后才被移除，所以 `MDCFilter` 接受这条请求 (仅仅只有这条请求)。第 6 条请求的级别为 `ERROR`，被标记为 "billing"。因此，它会被 `MarkerFilter` (配置文件中第二个 turbo 过滤器) 拒绝。
+
+因此，`FilterEvents` 通过 *turboFilters.xml* 输出的信息如下：
+
+```java
+2018-08-20 23:19:28,807 [main] INFO  chapters.filters.FilterEvents - logging statement 0
+2018-08-20 23:19:28,810 [main] INFO  chapters.filters.FilterEvents - logging statement 1
+2018-08-20 23:19:28,810 [main] INFO  chapters.filters.FilterEvents - logging statement 2
+2018-08-20 23:19:28,810 [main] DEBUG chapters.filters.FilterEvents - logging statement 3
+2018-08-20 23:19:28,810 [main] INFO  chapters.filters.FilterEvents - logging statement 4
+2018-08-20 23:19:28,810 [main] INFO  chapters.filters.FilterEvents - logging statement 5
+2018-08-20 23:19:28,810 [main] INFO  chapters.filters.FilterEvents - logging statement 7
+2018-08-20 23:19:28,811 [main] INFO  chapters.filters.FilterEvents - logging statement 8
+2018-08-20 23:19:28,811 [main] INFO  chapters.filters.FilterEvents - logging statement 9
+```
+
+可以看到，第 3 条日志请求，本来不应该被展示出来，因为我们仅仅只关注 *INFO* 级别的请求，但是它匹配了第一个 `TurboFilter`，所以被接受了。
+
+第 6 条日志请求，它是 *ERROR* 级别的日志，应该被显示。但是因为满足第二个 `TurboFilter`，它的 `OnMatch` 设置为 *DENY*，所以第 6 条请求不会被展示。
+
+### DuplicateMessageFilter
+
+`DuplicateMessageFilter` 可以拿出来单独阐述。这个过滤器检测重复的消息，在重复了一定次数之后，丢弃掉重复的消息。
+
