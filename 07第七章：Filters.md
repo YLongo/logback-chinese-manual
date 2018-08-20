@@ -175,6 +175,99 @@ logback-classic 附带的另外一个 `EventEvaluator` 的具体实现名为 [Ja
 > Example: *basicEventEvaluator.xml*
 
 ```xml
+<configuration>
 
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">      
+      <evaluator> <!-- defaults to type ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
+        <expression>return message.contains("billing");</expression>
+      </evaluator>
+      <OnMismatch>NEUTRAL</OnMismatch>
+      <OnMatch>DENY</OnMatch>
+    </filter>
+    <encoder>
+      <pattern>
+        %-4relative [%thread] %-5level %logger - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
+```
+
+上面的配置将 `EvaluatorFilter` 添加到 `ConsoleAppender`。一个类型为 `JaninoEventEvaluator` 的 evaluator 之后被注入到 `EvaluatorFilter` 中。`<evaluator` 在缺少 *class* 属性的情况下，Joran 会指定 evaluator 的默认类型为 `JaninoEventEvaluator`。这是[少数几个](https://logback.qos.ch/manual/onJoran.html#defaultClassMapping)需要 Joran 默认指定类型的组件。
+
+*expression* 元素对应刚才讨论过的评估表达式。表达式 `return message.contains("billing");` 返回一个布尔值。*message* 变量会被 `JaninoEventEvaluator` 自动导出。
+
+由于 `OnMismatch` 属性的值为 NEUTRAL 以及 `OnMatch` 属性的值为 DENY，所以评估过滤器会丢掉消息包含 "billing" 的日志事件。
+
+[FilterEvents](https://logback.qos.ch/xref/chapters/filters/FilterEvents.html) 发出十条日志请求，编号为 0 到 9。首先在没有过滤器的情况下运行 `FilterEvents`：
+
+```
+java chapters.filters.FilterEvents src/main/java/chapters/filters/basicConfiguration.xml
+```
+
+输出如下：
+
+```java
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 0
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 1
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 2
+0    [main] DEBUG chapters.filters.FilterEvents - logging statement 3
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 4
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 5
+0    [main] ERROR chapters.filters.FilterEvents - billing statement 6
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 7
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 8
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 9
+```
+
+假设我们想要丢弃 "billing statement"。*basicEventEvaluator.xml* 中配置的过滤器恰好可以满足这个需求。
+
+通过 *basicEventEvaluator.xml* 运行：
+
+```bash
+java chapters.filters.FilterEvents src/main/java/chapters/filters/basicEventEvaluator.xml
+```
+
+将会得到：
+
+```java
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 0
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 1
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 2
+0    [main] DEBUG chapters.filters.FilterEvents - logging statement 3
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 4
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 5
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 7
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 8
+0    [main] INFO  chapters.filters.FilterEvents - logging statement 9
+```
+
+评估表达式可以是一个 Java 代码块。如下，便是一个有效的表达式。
+
+```xml
+<evaluator>
+  <expression>
+    if(logger.startsWith("org.apache.http"))
+      return true;
+
+    if(mdc == null || mdc.get("entity") == null)
+      return false;
+
+    String payee = (String) mdc.get("entity");
+
+    if(logger.equals("org.apache.http.wire") &amp;&amp;
+        payee.contains("someSpecialValue") &amp;&amp;
+        !message.contains("someSecret")) {
+      return true;
+    }
+
+    return false;
+  </expression>
+</evaluator>
 ```
 
