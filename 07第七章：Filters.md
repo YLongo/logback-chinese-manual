@@ -340,6 +340,118 @@ java chapters.filters.FilterEvents src/main/java/chapters/filters/evaluatorWithM
 >   Example: *SampleTurboFilter.java*
 
 ```java
+package chapters.filters;
 
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.turbo.TurboFilter;
+import ch.qos.logback.core.spi.FilterReply;
+
+public class SampleTurboFilter extends TurboFilter {
+
+  String marker;
+  Marker markerToAccept;
+
+  @Override
+  public FilterReply decide(Marker marker, Logger logger, Level level,
+      String format, Object[] params, Throwable t) {
+
+    if (!isStarted()) {
+      return FilterReply.NEUTRAL;
+    }
+
+    if ((markerToAccept.equals(marker))) {
+      return FilterReply.ACCEPT;
+    } else {
+      return FilterReply.NEUTRAL;
+    }
+  }
+
+  public String getMarker() {
+    return marker;
+  }
+
+  public void setMarker(String markerStr) {
+    this.marker = markerStr;
+  }
+
+  @Override
+  public void start() {
+    if (marker != null && marker.trim().length() > 0) {
+      markerToAccept = MarkerFactory.getMarker(marker);
+      super.start(); 
+    }
+  }
+}
 ```
 
+`TurboFilter` 接受一个指定的 marker，如果 marker 没有被找到，那么过滤器会将日志事件传递给过滤器链中的下一个过滤器。
+
+为了更加灵活，允许在配置文件指定 marker 用于检测，因此可以使用 get  和 set 方法。我们还可以通过实现 `start()` 方法来检查在配置过程中，指定的选项是否满足。
+
+下面的配置充分利用了我们新创建的 `TurboFilter`。
+
+> Example: *sampleTurboFilterConfig.xml* 
+
+```xml
+<configuration>
+  <turboFilter class="chapters.filters.SampleTurboFilter">
+    <Marker>sample</Marker>
+  </turboFilter>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>
+        %-4relative [%thread] %-5level %logger - %msg%n
+      </pattern>
+    </encoder>
+  </appender>
+
+  <root>
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
+```
+
+loback-classic 附带了几个 `TurboFilter` 类可以开箱即用。[`MDCFilter`](https://logback.qos.ch/xref/ch/qos/logback/classic/turbo/MDCFilter.html) 用来检查给定的值在 MDC 中是否存在。[`DynamicThresholdFilter`](https://logback.qos.ch/apidocs/ch/qos/logback/classic/turbo/DynamicThresholdFilter.html) 根据 MDC key/level 相关的阀值来进行过滤。[`MarkerFilter`](https://logback.qos.ch/xref/ch/qos/logback/classic/turbo/MarkerFilter.html) 用来检查日志请求中指定的 marker 是否存在。
+
+下面的例子使用了 `MDCFilter` 与 `MarkerFilter`。
+
+> Example: *turboFilters.xml*
+
+```xml
+<configuration>
+
+  <turboFilter class="ch.qos.logback.classic.turbo.MDCFilter">
+    <MDCKey>username</MDCKey>
+    <Value>sebastien</Value>
+    <OnMatch>ACCEPT</OnMatch>
+  </turboFilter>
+        
+  <turboFilter class="ch.qos.logback.classic.turbo.MarkerFilter">
+    <Marker>billing</Marker>
+    <OnMatch>DENY</OnMatch>
+  </turboFilter>
+
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%date [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="console" />
+  </root>  
+</configuration>
+```
+
+执行以下命令：
+
+```bash
+java chapters.filters.FilterEvents src/main/java/chapters/filters/turboFilters.xml
+```
+
+在之前我们看到 [`FilterEvents`](https://logback.qos.ch/xref/chapters/filters/FilterEvents.html) 输出了 10 条日志请求，编号 0 到 9。除了第 3 条与第 6 条，所有的请求都是 INFO 级别的。
