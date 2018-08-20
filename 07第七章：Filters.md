@@ -271,3 +271,57 @@ java chapters.filters.FilterEvents src/main/java/chapters/filters/basicEventEval
 </evaluator>
 ```
 
+## Matchers
+
+虽然可以通过调用 `String` 类的 [matches()](http://java.sun.com/j2se/1.5.0/docs/api/java/lang/String.html#matches%28java.lang.String%29) 方法来进行模式匹配，但是每次调用 filter 都需要耗费时间重新编译一个新的 `Pattern` 对象。为了消除这种影响，你可以预先定义一个或者多个 [Matcher](https://logback.qos.ch/xref/ch/qos/logback/core/boolex/Matcher.html) 对象。一旦定义了一个 matcher，就可以在评估表达式中重复使用了。
+
+通过一个简单的例子来说明这一点：
+
+>   Example: *evaluatorWithMatcher.xml*
+
+```xml
+<configuration debug="true">
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+      <evaluator>        
+        <matcher>
+          <Name>odd</Name>
+          <!-- filter out odd numbered statements -->
+          <regex>statement [13579]</regex>
+        </matcher>
+        
+        <expression>odd.matches(formattedMessage)</expression>
+      </evaluator>
+      <OnMismatch>NEUTRAL</OnMismatch>
+      <OnMatch>DENY</OnMatch>
+    </filter>
+    <encoder>
+      <pattern>%-4relative [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
+```
+
+通过 *evaluatorWithMatcher.xml* 运行：
+
+```bash
+java chapters.filters.FilterEvents src/main/java/chapters/filters/evaluatorWithMatcher.xml
+```
+
+将会得到：
+
+```java
+260  [main] INFO  chapters.filters.FilterEvents - logging statement 0
+264  [main] INFO  chapters.filters.FilterEvents - logging statement 2
+264  [main] INFO  chapters.filters.FilterEvents - logging statement 4
+266  [main] ERROR chapters.filters.FilterEvents - billing statement 6
+266  [main] INFO  chapters.filters.FilterEvents - logging statement 8
+```
+
+如果你想定义其它的 matcher，可以继续增加 `<matcher>` 元素。
+
