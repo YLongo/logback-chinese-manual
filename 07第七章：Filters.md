@@ -325,3 +325,21 @@ java chapters.filters.FilterEvents src/main/java/chapters/filters/evaluatorWithM
 
 如果你想定义其它的 matcher，可以继续增加 `<matcher>` 元素。
 
+## TurboFilters
+
+`TurboFilter` 对象都继承 [`TurboFilter`](https://logback.qos.ch/xref/ch/qos/logback/classic/turbo/TurboFilter.html) 抽象类。对于 regular 过滤器，它们使用三元逻辑来返回对日志事件的评估。
+
+总之，它们跟之前提到的过滤工作原理差不多。主要的不同点在于 `Filter` 与 `TurboFilter` 对象。
+
+`TurboFilter` 对象被绑定刚在 logger 上下文中。因此，在使用给定的 appender 以及每次发出的日志请求都会调用 `TurboFilter` 对象。因此，turbo 过滤器可以为日志事件提供高性能的过滤，即使是在事件被创建之前。
+
+### 实现自己的 TurboFilter
+
+想要创建自己的 `TurboFilter` 组件，只需要继承 `TurboFilter` 这个抽象类就可以了。跟之前的一样，想要实现定制的过滤器对象，开发自定义的 `TurboFilter`，只需要实现 `decide()` 方法就可以了。下一个例子，我们会创建一个稍微复杂一点的过滤器：
+
+>   Example: *SampleTurboFilter.java*
+
+```java
+
+```
+
