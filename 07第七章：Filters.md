@@ -532,5 +532,11 @@ logger.debug("Hello {}.", name1);
 
 # 在 logback-access 中
 
+logback-access 提供了 logback-classic 提供的大部分功能。特别地，`Filter` 对象同样是有效的，并且以同样的方式工作，就像 logback-classic 的副本一样，但是有一个显著的区别。logback-access 过滤器对 [`AccessEvent`](https://logback.qos.ch/xref/ch/qos/logback/access/spi/AccessEvent.html) 实例起作用，而不是 `LoggingEvent` 实例。目前，logback-access 只提供了以下有限的过滤器。如果你想建议添加额外的过滤器，请通过 logback-dev 邮件列表进行联系。
+
+## CountingFilter
+
+在 [`CountingFilter`](https://logback.qos.ch/manual/xref/ch/qos/logback/access/filter/CountingFilter.html) 类的帮助下，logback-access 可以提供对服务器访问数据的统计。在初始化的死后，`CountingFilter` 将自己作为一个 MBean 注册到平台的 JMX 服务上。你可以通过轮询 MBean 来进行数据统计。例如，平均每分钟，每小时，每天，每周，或者每月。其它的统计，例如周计，天计，小时计，月计或者总计也是可以获取的。
+
 
 
