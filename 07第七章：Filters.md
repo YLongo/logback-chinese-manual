@@ -538,5 +538,33 @@ logback-access 提供了 logback-classic 提供的大部分功能。特别地，
 
 在 [`CountingFilter`](https://logback.qos.ch/manual/xref/ch/qos/logback/access/filter/CountingFilter.html) 类的帮助下，logback-access 可以提供对服务器访问数据的统计。在初始化的死后，`CountingFilter` 将自己作为一个 MBean 注册到平台的 JMX 服务上。你可以通过轮询 MBean 来进行数据统计。例如，平均每分钟，每小时，每天，每周，或者每月。其它的统计，例如周计，天计，小时计，月计或者总计也是可以获取的。
 
+下面的 *logback-access.xml* 配置文件声明了一个 `CountingFilter`。
 
+```xml
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+
+  <filter class="ch.qos.logback.access.filter.CountingFilter">
+    <name>countingFilter</name>
+  </filter>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%h %l %u %t \"%r\" %s %b</pattern>
+    </encoder>
+  </appender>
+
+  <appender-ref ref="STDOUT" />
+</configuration>
+```
+
+你可以通过 `jconsole` 查看有 `CountingFilte` 在你平台的 JMX 服务上维护的各种统计信息。
+
+![](images/countingFilter.png)
+
+### EvaluatorFilter
+
+[`EvaluatorFilter`](https://logback.qos.ch/xref/ch/qos/logback/core/filter/EvaluatorFilter.html) 是一个通用的过滤器，维护了一个 `EventEvaluator`。顾名思义，[`EventEvaluator`](https://logback.qos.ch/xref/ch/qos/logback/core/boolex/EventEvaluator.html) 根据给定的标准判断给定的日志事件是否满足，`EvaluatorFilter` 将会根据 match 与 mismatch 的情况，返回由 `onMatch` 或 `onMismatch` 属性指定的值。`EvaluatorFilter` 在之前的 logback-classic 中已经讨论过了 ([见上面](https://github.com/Volong/logback-chinese-manual/blob/master/07%E7%AC%AC%E4%B8%83%E7%AB%A0%EF%BC%9AFilters.md#evaluatorfilter))。现在大部分都是对之前讨论的重复。
+
+注意 `EventEvaluator` 是一个抽象类。你可以通过继承 `EventEvaluator` 来实现你自己的评估逻辑。logback-access 附带了一个名为 [JaninoEventEvaluator](https://logback.qos.ch/xref/ch/qos/logback/access/boolex/JaninoEventEvaluator.html) 的具体实现。它可以接收任意的 Java 表达式作为评估标准。我们把这种 Java 代码块称为 "*评估表达式*"。
 
