@@ -478,3 +478,59 @@ java chapters.filters.FilterEvents src/main/java/chapters/filters/turboFilters.x
 
 `DuplicateMessageFilter` 可以拿出来单独阐述。这个过滤器检测重复的消息，在重复了一定次数之后，丢弃掉重复的消息。
 
+这个过滤器使用字符串是否相等来检查是否重复。不会检查非常相似，仅仅只差几个字符的字符串。例如：
+
+```java
+logger.debug("Hello "+name0);
+logger.debug("Hello "+name1);
+```
+
+如果 `name0` 与 `name1` 有不同的值，那么两个 "Hello" 消息会被认为不相关。根据用户的需要，将会可能会支持相似字符串的检查，限制相似字符串的重复，而不是完全相同的。
+
+但是在参数化日志请求中，只考虑原始消息。例如，下面两条日志请求，原始消息为 "Hello {}"，它们被认为是想相等的，因此被认为是重复出现。
+
+```javascript
+logger.debug("Hello {}.", name0);
+logger.debug("Hello {}.", name1);
+```
+
+可以通过 `AllowedRepetitions` 属性来指定允许重复的次数。如果这个属性被设置为 1，那么第二条以及后续的日志消息都会被丢弃掉。类似的，如果被设置为 2，那么第三条及后续的日志消息会被丢弃掉。这个值默认设置为 5。
+
+为了检测重复，过滤器需要在内部的缓存中保留对旧消息的引用。通过 `CacheSize` 来控制缓存的大小。默认情况下，这个值为 100。
+
+>   Example: *duplicateMessage.xml*
+
+```xml
+<configuration>
+
+  <turboFilter class="ch.qos.logback.classic.turbo.DuplicateMessageFilter"/>
+
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%date [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="console" />
+  </root>  
+</configuration>
+```
+
+`FilterEvents` 通过 `duplicateMessage.xml` 配置后输出如下：
+
+```java
+2018-08-21 09:09:22,036 [main] INFO  chapters.filters.FilterEvents - logging statement 0
+2018-08-21 09:09:22,041 [main] INFO  chapters.filters.FilterEvents - logging statement 1
+2018-08-21 09:09:22,041 [main] INFO  chapters.filters.FilterEvents - logging statement 2
+2018-08-21 09:09:22,041 [main] INFO  chapters.filters.FilterEvents - logging statement 4
+2018-08-21 09:09:22,041 [main] INFO  chapters.filters.FilterEvents - logging statement 5
+2018-08-21 09:09:22,050 [main] ERROR chapters.filters.FilterEvents - billing statement 6
+```
+
+"logging statement 0" 是消息 "logging statement {}"j 第一次出现。"logging statement 1" 是第一次重复。"logging statement 2" 是第二次重复。有趣的是，虽然 "logging statement 3" 的级别为 *DEBUG*，为第三次重复。但是根据[方法打印以及基本选择规则](https://github.com/Volong/logback-chinese-manual/blob/master/02%E7%AC%AC%E4%BA%8C%E7%AB%A0%EF%BC%9A%E6%9E%B6%E6%9E%84.md#%E6%96%B9%E6%B3%95%E6%89%93%E5%8D%B0%E4%BB%A5%E5%8F%8A%E5%9F%BA%E6%9C%AC%E9%80%89%E6%8B%A9%E8%A7%84%E5%88%99)，它被丢弃了。这也说明了 turbo 过滤器会在其它过滤器之前调用，包括在基本选择规则之前。因此 `DuplicateMessageFilter` 认为 "logging statement 3" 是第三次重复，而不会管它是否会在之后过滤器链的处理中被丢弃掉。"logging statement 4" 是第四次重复。"logging statement 5" 是第五次。因此默认的重复次数是 5，所以之后的语句都会被丢弃掉。(注：指的是 "logging statement {}")。
+
+# 在 logback-access 中
+
+
+
