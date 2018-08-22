@@ -566,5 +566,57 @@ logback-access 提供了 logback-classic 提供的大部分功能。特别地，
 
 [`EvaluatorFilter`](https://logback.qos.ch/xref/ch/qos/logback/core/filter/EvaluatorFilter.html) 是一个通用的过滤器，维护了一个 `EventEvaluator`。顾名思义，[`EventEvaluator`](https://logback.qos.ch/xref/ch/qos/logback/core/boolex/EventEvaluator.html) 根据给定的标准判断给定的日志事件是否满足，`EvaluatorFilter` 将会根据 match 与 mismatch 的情况，返回由 `onMatch` 或 `onMismatch` 属性指定的值。`EvaluatorFilter` 在之前的 logback-classic 中已经讨论过了 ([见上面](https://github.com/Volong/logback-chinese-manual/blob/master/07%E7%AC%AC%E4%B8%83%E7%AB%A0%EF%BC%9AFilters.md#evaluatorfilter))。现在大部分都是对之前讨论的重复。
 
-注意 `EventEvaluator` 是一个抽象类。你可以通过继承 `EventEvaluator` 来实现你自己的评估逻辑。logback-access 附带了一个名为 [JaninoEventEvaluator](https://logback.qos.ch/xref/ch/qos/logback/access/boolex/JaninoEventEvaluator.html) 的具体实现。它可以接收任意的 Java 表达式作为评估标准。我们把这种 Java 代码块称为 "*评估表达式*"。
+注意 `EventEvaluator` 是一个抽象类。你可以通过继承 `EventEvaluator` 来实现你自己的评估逻辑。logback-access 附带了一个名为 [JaninoEventEvaluator](https://logback.qos.ch/xref/ch/qos/logback/access/boolex/JaninoEventEvaluator.html) 的具体实现。它可以接收任意的 Java 表达式作为评估标准。我们把这种 Java 代码块称为 "*评估表达式*"。评估表达式在事件过滤中有较大的灵活性。`JaninoEventEvaluator` 需要 [Janino 类库](http://docs.codehaus.org/display/JANINO/Home)。请查看[相应的文档](https://logback.qos.ch/setup.html#janino)进行设置。
+
+评估表达式在解析配置文件的过程中被动态编译。作为用户，你不需要知道实际的细节。但是，你需要保证 Java 表达式返回一个布尔值，能够计算为 true 或者 false。
+
+评估表达式可以对当前访问的事件进行评估。logback-access 会自动导出当前 `AccessEvent` 实例到变量 **event** 下。你可以通过 `event` 变量读取 HTTP 请求中以及 HTTP 响应中的各种数据。查看 [AccessEvent 类的源码](https://logback.qos.ch/xref/ch/qos/logback/access/spi/AccessEvent.html)来查看具体的列表。
+
+下个配置文件基于 HTTP 响应码 [404 (Not Found)](http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5) 来进行过滤。每一个 404 的请求都会在控制台打印出来。
+
+>   Example: *accessEventEvaluator.xml*
+
+```xml
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+      <evaluator>
+        <expression>event.getStatusCode() == 404</expression>
+      </evaluator>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+   <encoder><pattern>%h %l %u %t %r %s %b</pattern></encoder>
+  </appender>
+
+  <appender-ref ref="STDOUT" />
+</configuration>
+```
+
+下面的例子，打印 404 错误，但是排除了请求 CSS 文件的请求。
+
+>   Example: *accessEventEvaluator2.xml*
+
+```xml
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+      <evaluator name="Eval404">
+        <expression>
+         (event.getStatusCode() == 404)
+           &amp;&amp;  <!-- & 符号需要被转义 -->
+         !(event.getRequestURI().contains(".css"))
+        </expression>
+      </evaluator>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+
+   <encoder><pattern>%h %l %u %t %r %s %b</pattern></encoder>
+  </appender>
+
+  <appender-ref ref="STDOUT" />
+</configuration>
+```
 
