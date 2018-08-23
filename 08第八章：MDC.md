@@ -78,3 +78,16 @@ main 方法在启动的时候在 `MDC` 中将 *Dorothy* 关联到 *first* 上。
 </appender>
 ```
 
+注意 *X%* 转换符在 `PatternLayout` 中的用法。*X%* 转换符使用了两次，一次用于 key 为 *first*，一次用于 key 为 *last*。在获得了 `SimpleMDC.class` 中的 logger 之后，通过代码将 *Parker* 关联到 *last* 上。然后通过 logger 打印了两条不同的信息。最后，通过代码重新设置了 `MDC` 为不同的值，并打印了几条日志请求。运行 SimpleMDC 将会输出：
+
+```java
+Dorothy Parker - Check enclosed.
+Dorothy Parker - The most beautiful two words in English.
+Richard Nixon - I am not a crook.
+Richard Nixon - Attributed to the former US president. 17 Nov 1973.
+```
+
+`SimpleMDC` 展示了正确配置 logback layout 就可以自动输出 `MDC` 的信息。而且，`MDC` 中信息可以被多个 logger 使用。
+
+### 高级用法
+
