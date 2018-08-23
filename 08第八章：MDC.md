@@ -23,3 +23,58 @@ public class MDC {
 ```
 
 `MDC` 类中只包含静态方法。它让开发人员可以在 *诊断上下文* 中放置信息，而后通过特定的 logback 组件去获取。`MDC` 在 *每个线程的基础上* 管理上下文信息。通常，当为一个新客户端启动服务时，开发人员会将特定的上文信息插入到 MDC 中。例如，客户端 id，客户端 IP 地址，请求参数等。如果 logback 组件配置得当的话，会自动在每个日志条目中包含这些信息。
+
+请注意，logback-classic 实现的 MDC，假设值以适当的频率放置。还需注意的一点是，子线程不会自动继承父线程的 MDC。
+
+下面的 [SimpleMDC](https://logback.qos.ch/xref/chapters/mdc/SimpleMDC.html) 说明了这点。
+
+>   Example: *[SimpleMDC.java](https://logback.qos.ch/xref/chapters/mdc/SimpleMDC.html)*
+
+```java
+package chapters.mdc;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
+import ch.qos.logback.classic.PatternLayout;
+import ch.qos.logback.core.ConsoleAppender;
+
+public class SimpleMDC {
+  static public void main(String[] args) throws Exception {
+
+    // 你可以选择在任何时候将值放入 MDC 中    
+    MDC.put("first", "Dorothy");
+
+    [ SNIP ]
+    
+    Logger logger = LoggerFactory.getLogger(SimpleMDC.class);
+    
+    MDC.put("last", "Parker");
+    
+    logger.info("Check enclosed.");
+    logger.debug("The most beautiful two words in English.");
+
+    MDC.put("first", "Richard");
+    MDC.put("last", "Nixon");
+    logger.info("I am not a crook.");
+    logger.info("Attributed to the former US president. 17 Nov 1973.");
+  }
+
+  [ SNIP ]
+
+}
+```
+
+main 方法在启动的时候在 `MDC` 中将 *Dorothy* 关联到 *first* 上。你可以在 `MDC` 放置尽可能多的键值对，反正你开心就好。多次插入同一个 key，新值会覆盖旧值。然后代码继续配置 logback。
+
+为了简洁，我们隐藏了配置文件 [simpleMDC.xml](http://github.com/qos-ch/logback/blob/master/logback-examples/src/main/java/chapters/mdc/simpleMDC.xml) 中的其它配置。下面的一些相关的配置。
+
+```xml
+<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender"> 
+  <layout>
+    <Pattern>%X{first} %X{last} - %m%n</Pattern>
+  </layout> 
+</appender>
+```
+
