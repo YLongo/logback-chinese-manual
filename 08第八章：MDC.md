@@ -337,7 +337,128 @@ java chapters.mdc.NumberCruncherClient hostname
 
 为了在处理请求时，`MDC` 中包含的信息一直都是正确的。一种可能的处理方式是在开始处理之前存储用户名，结束时进行移除。[`Filter`](http://java.sun.com/javaee/5/docs/api/javax/servlet/Filter.html) 可以用来处理这种情况。
 
+在 servlet 过滤器 `doFilter` 方法中，我们可以通过 request (或者 cookie) 获取用户的相关信息，并存到 `MDC` 中。其它过滤器或者 servlet 后续的处理会从 `MDC` 中受益。最后，当我们的 servlet 过滤器再次获得控制时，就有机会去清除 MDC 中的数据。
 
+下面是一个过滤器的实现：
+
+>   Example: *UserServletFilter.java*
+
+```java
+package chapters.mdc;
+
+import java.io.IOException;
+import java.security.Principal;
+
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.slf4j.MDC;
+
+public class UserServletFilter implements Filter {
+
+  private final String USER_KEY = "username";
+  
+  public void destroy() {
+  }
+
+  public void doFilter(ServletRequest request, ServletResponse response,
+    FilterChain chain) throws IOException, ServletException {
+
+    boolean successfulRegistration = false;
+
+    HttpServletRequest req = (HttpServletRequest) request;    
+    Principal principal = req.getUserPrincipal();
+    // Please note that we could have also used a cookie to 
+    // retrieve the user name
+
+    if (principal != null) {
+      String username = principal.getName();
+      successfulRegistration = registerUsername(username);
+    } 
+
+    try {
+      chain.doFilter(request, response);
+    } finally {
+      if (successfulRegistration) {
+        MDC.remove(USER_KEY);
+      }
+    }
+  }
+
+  public void init(FilterConfig arg0) throws ServletException {
+  }
+  
+
+  /**
+   * Register the user in the MDC under USER_KEY.
+   * 
+   * @param username
+   * @return true id the user can be successfully registered
+   */
+  private boolean registerUsername(String username) {
+    if (username != null && username.trim().length() > 0) {
+      MDC.put(USER_KEY, username);
+      return true;
+    }
+    return false;
+  }
+}
+```
+
+当过滤器的 `doFilter` 被调用时，它首先会在 request 中去寻找 `java.security.Principal` 对象。这个对象包含了当前认证用户的名字。如果找到了用户的信息，会将它注册到 `MDC` 中。
+
+一个过滤器链执行完成，那么这个过滤器会从 `MDC` 中移除用户信息。
+
+刚才我们描述的方法只是在请求期间，或者线程处理中才去设置 MDC 的值。其它的线程不会受到影响。而且，任何给定的线程在任何时候都会包含正确的 MDC 数据。
+
+### MDC 与线程管理
+
+MDC 的副本不能总是由工作线程从初始化线程继承。当使用 `java.util.concurrent.Executors` 进行线程管理时就是这种情况。例如，`newCachedThreadPool` 方法会创建一个 `ThreadPoolExecutor`，跟其它线程池代码一样，有着复杂的线程创建逻辑。
+
+在这些情况下，推荐在提交任务去执行之前，在源线程上调用 `MDC.getCopyOfContextMap()`。当任务运行的时候，它的第一个动作，应该是调用 `MDC.setContextMapValues()` 将原始 MDC 值的存储副本与新的 `Executor` 管理线程关联起来。
+
+### MDCInsertingServletFilter
+
+在 web 应用中，获取给定 HTTP 请求的主机名，请求 URI 以及 user-agent 是十分有用的。[`MDCInsertingServletFilter`](https://logback.qos.ch/xref/ch/qos/logback/classic/helpers/MDCInsertingServletFilter.html) 通过如下的 key，将数据插入到 MDC 中。
+
+| MDC key             | MDC value                                                    |
+| ------------------- | ------------------------------------------------------------ |
+| `req.remoteHost`    | 由 [getRemoteHost()](http://java.sun.com/j2ee/sdk_1.3/techdocs/api/javax/servlet/ServletRequest.html#getRemoteHost%28%29) 返回 |
+| `req.xForwardedFor` | 请求头 ["X-Forwarded-For"](http://en.wikipedia.org/wiki/X-Forwarded-For) 的值 |
+| `req.method`        | 由 [getMethod()](http://java.sun.com/j2ee/sdk_1.3/techdocs/api/javax/servlet/http/HttpServletRequest.html#getMethod%28%29) 返回 |
+| `req.requestURI`    | 由 [getRequestURI()](http://java.sun.com/j2ee/sdk_1.3/techdocs/api/javax/servlet/http/HttpServletRequest.html#getRequestURI%28%29) 返回 |
+| `req.requestURL`    | 由 [getRequestURL()](http://java.sun.com/j2ee/sdk_1.3/techdocs/api/javax/servlet/http/HttpServletRequest.html#getRequestURL%28%29) 返回 |
+| `req.queryString`   | 由 [getQueryString()](http://java.sun.com/j2ee/sdk_1.3/techdocs/api/javax/servlet/http/HttpServletRequest.html#getQueryString%28%29) 返回 |
+| `req.userAgent`     | 请求头 "User-Agent" 的值                                     |
+
+想要使用 `MDCInsertingServletFilter`，需要在 *web.xml* 中添加以下行：
+
+```xml
+<filter>
+  <filter-name>MDCInsertingServletFilter</filter-name>
+  <filter-class>
+    ch.qos.logback.classic.helpers.MDCInsertingServletFilter
+  </filter-class>
+</filter>
+<filter-mapping>
+  <filter-name>MDCInsertingServletFilter</filter-name>
+  <url-pattern>/*</url-pattern>
+</filter-mapping> 
+```
+
+**如果你的 web 应用有多个过滤器，请确保 `MDCInsertingServletFilter` 在其它过滤器之前声明 **。例如，假设 web 应用的主要处理是在过滤器 'F' 中完成，那么如果 `MDCInsertingServletFilter` 在 'F' 之后被调用，那么在 'F' 中被调用的代码将看不到 `MDCInsertingServletFilter` 设置的 MDC 的值。(这不是废话吗......)
+
+一旦使用了该过滤器，通过 %X 可以输出相对应的 MDC 的值。例如，想要在一行上打印远程主机，后面跟着请求的 URI，令一行打印日志，后面跟着日志消息。那么你应该如下设置 `PatternLayout`：
+
+```xml
+%X{req.remoteHost} %X{req.requestURI}%n%d - %m%n
+```
 
 
 
