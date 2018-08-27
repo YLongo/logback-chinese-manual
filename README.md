@@ -34,4 +34,5 @@ logback 手册尽可能详细的描述了 logback API，包括它的特性以及
 [第五章：Encoder](https://github.com/Volong/logback-chinese-manual/blob/master/05%E7%AC%AC%E4%BA%94%E7%AB%A0%EF%BC%9AEncoder.md)   
 [第六章：Layouts](https://github.com/Volong/logback-chinese-manual/blob/master/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayouts.md)  
 [第七章：Filters](https://github.com/Volong/logback-chinese-manual/blob/master/07%E7%AC%AC%E4%B8%83%E7%AB%A0%EF%BC%9AFilters.md)  
-[第八章：MDC](https://github.com/Volong/logback-chinese-manual/blob/master/08%E7%AC%AC%E5%85%AB%E7%AB%A0%EF%BC%9AMDC.md)
+[第八章：MDC](https://github.com/Volong/logback-chinese-manual/blob/master/08%E7%AC%AC%E5%85%AB%E7%AB%A0%EF%BC%9AMDC.md)  
+[第九章：日志隔离](https://github.com/Volong/logback-chinese-manual/blob/master/09%E7%AC%AC%E4%B9%9D%E7%AB%A0%EF%BC%9A%E6%97%A5%E5%BF%97%E9%9A%94%E7%A6%BB.md)
