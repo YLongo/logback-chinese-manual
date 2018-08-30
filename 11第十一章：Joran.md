@@ -20,7 +20,7 @@ Joran 实际上是一个通用的配置系统，能够被独立用于日志记�
 
 由于 SAX API 是基于事件的结构，所以基于 SAX 的工具不能很好的处理前向引用，也就是引用元素被定义晚于当前元素被处理。循环引用元素也有同样的问题。通常，DOM API 允许用户在所有的元素上进行搜索，并且可以向前跳转。
 
-这种额外的灵活性导致我们在开始的时候选择 DOM API 作为 Joran 的解析器。在经过了一些实验之后，我们发现当解析规则通过模式以及行动表达时，在解析 DOM 树时处理相隔较远的元素没有意义。*Joran 只需要 XML 文档中连续且深度优先顺序的元素。*
+这种额外的灵活性导致我们在开始的时候选择 DOM API 作为 Joran 的解析器。在经过了一些实验之后，我们发现当解析规则通过模式以及动作表达时，在解析 DOM 树时处理相隔较远的元素没有意义。*Joran 只需要 XML 文档中连续且深度优先顺序的元素。*
 
 而且，在发生错误时，SAX API 提供元素的位置信息可以让 Joran 去展示精确的行号与列号。位置信息在识别解析问题时非常方便。
 
@@ -33,6 +33,54 @@ Joran 实际上是一个通用的配置系统，能够被独立用于日志记�
 Joran 的模式本质上就是一个字符串。有两种形式的模式：*exact* 与 *wildcard*。模式 "a/b" 可以用来匹配嵌套在 `<a>` 元素中的 `<b>` 元素。因为 *exact* 匹配的设置，"a/b" 模式不会匹配其它的元素。
 
 wildcard 可以用来进行后缀与前缀匹配。例如，"\*/a" 可以用来匹配任何以 "a" 结尾的后缀，也就是 XML 文档中任何 `<a>` 元素，但是不包含任何嵌套在 `<a>` 中的元素。"a/\*"  将会匹配任何 `<a>` 开头的元素，但是不包括任何嵌套在 `<a>` 中的元素。
+
+### 动作
+
+正如之前提到的，Joran 解析规则由相关联的模式组成。动作继承了 [`Action`](https://logback.qos.ch/xref/ch/qos/logback/core/joran/action/Action.html) 类，包含了如下的抽象方法。为了简单起见，其它的方法被隐藏了。
+
+```java
+package ch.qos.logback.core.joran.action;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.Locator;
+import ch.qos.logback.core.joran.spi.InterpretationContext;
+
+public abstract class Action extends ContextAwareBase {
+  /**
+   * 当解析器遇到一个元素匹配
+   * {@link ch.qos.logback.core.joran.spi.Pattern Pattern}.
+   */
+  public abstract void begin(InterpretationContext ic, String name,
+      Attributes attributes) throws ActionException;
+
+  /**
+   * 传递包含元素的 body (作为字符串) 参数
+   */
+  public void body(InterpretationContext ic, String body)
+      throws ActionException {
+    // NOP
+  }
+
+  /*
+   * 当解析器遇到最后一个元素匹配
+   * {@link ch.qos.logback.core.joran.spi.Pattern Pattern}.
+   */
+  public abstract void end(InterpretationContext ic, String name)
+      throws ActionException;
+}
+```
+
+所以，每个动作必须实现 `begin()` 与 `end()` 方法。`body()` 方法的实现是可选的，因为 `Action` 提供了一个空的实现。
+
+### 规则存储
+
+如前面提到的，根据匹配模式调用动作是 Joran 的核心概念。规则跟模式与动作相关联。规则被存储在 [RuleStore](https://logback.qos.ch/xref/ch/qos/logback/core/joran/spi/RuleStore.html) 中。
+
+根据之前提到的，Joran 建立在 SAX API 上。当 XML 文档被解析时，每个元素会生成对应 start、body、end 的事件。当 Joran 的配置器接收到这些事件时，它会根据*当前模式*去规则存储中查找对应的动作。例如，元素 *B* 的 start、body、end 事件的当前模式为 "A/B"，内嵌在一个顶级元素 *A* 中。当 Joran 接收并处理 SAX 事件时，它会自动维护当前模式的数据结构。
+
+当有几个规则匹配到当前模式时，精确匹配会比后缀匹配优先，后缀匹配会比前缀匹配优先。对于详细的实现细节，请查看 [SimpleRuleStore](https://logback.qos.ch/xref/ch/qos/logback/core/joran/spi/SimpleRuleStore.html) 类。
+
+### 解析上下文
 
 
 
