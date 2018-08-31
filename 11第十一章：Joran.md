@@ -82,5 +82,97 @@ public abstract class Action extends ContextAwareBase {
 
 ### 解析上下文
 
+为了允许多个动作相互协作，在调用 begin 与 end 方法时会包含解析上下文，作为第一个参数传递。解析上下文包含对象栈，对象映射，错误列表以及 Joran 调用动作时的一个引用。请查看 [`InterpretationContext`](https://logback.qos.ch/xref/ch/qos/logback/core/joran/spi/InterpretationContext.html) 类中详细的字段列表。
 
+动作可以通过对象栈获取，入栈，出栈操作，或者通过对象映射来放置、获取 key 来进行协作。动作可以在解析上下文的 `StatusManager` 上通过添加错误项来报告任何错误条件。
+
+### Hello world
+
+这个章节中的第一个例子将会展示使用 Joran 所需要最小条件。这个例子由一个名为 [`HelloWorldAction`](https://logback.qos.ch/xref/chapters/onJoran/helloWorld/HelloWorldAction.html) 的动作组成。在调用它的 `begin()` 方法时会在控制台打印 "Hello World"。配置文件由解析器负责解析。为了实现本章的目的，我们实现了一个非常的简单的配置器 [`SimpleConfigurator`](https://logback.qos.ch/xref/chapters/onJoran/SimpleConfigurator.html)。[`HelloWorld`](https://logback.qos.ch/xref/chapters/onJoran/helloWorld/HelloWorld.html) 应用会将下面这些结合在一起：
+
+-   创建一个规则与 `Context` 的映射
+-   创建一个与 *hello-world* 模式相关的解析规则，以及对应的 `HelloWorldAction` 实例
+-   创建一个 `SimpleConfigutator`，解析之前提到的规则映射。
+-   调用配置器的 `doConfigure` 方法，解析 XML 文件
+-   最后，将会收集上下文中的所有转态信息。如果有的话，将会打印
+
+*hello.xml* 包含一个 \<hello-world\> 元素，没有任何其它的内置元素。详细的内容请查看 *logback-examples/src/main/java/chapters/onJoran/helloWorld/* 文件夹中的内容。
+
+通过 *hello.xml* 运行 HelloWorld 应用将会在控制台输出 "Hello World"。
+
+```java
+java chapters.onJoran.helloWorld.HelloWorld src/main/java/chapters/onJoran/helloWorld/hello.xml
+```
+
+强烈推荐你在规则存储中添加新的规则，更改 XML 配置 (hello.xml)，以及添加新的动作。
+
+### 动作相互合作
+
+*logback-examples/src/main/java/joran/calculator/* 文件夹包含了几个动作，为了完成简单的计算，它们通过共同的对象栈相互合作。
+
+*calculator1.xml* 文件包含一个 `computation` 元素，内嵌了一个 `literal` 元素。如下：
+
+>   Example: calculator1.xml
+
+```xml
+<computation name="total">
+  <literal value="3"/>
+</computation>
+```
+
+在应用 [`Calculator1`](https://logback.qos.ch/xref/chapters/onJoran/calculator/Calculator1.html) 中，我们声明了各种解析规则 (模式与动作) 基于 XML 文档的内容一起合作来计算一个结果。
+
+通过 *calculator1.xml* 运行 `Calculator`：
+
+```jav
+java chapters.onJoran.calculator.Calculator1 src/main/java/chapters/onJoran/calculator/calculator1.xml
+```
+
+将会输出：
+
+```java
+The computation named [total] resulted in the value 3
+```
+
+解析 *calculator1.xml* 文档包含如下的步骤：
+
+-   开始事件对应的 \<computation\>  元素转换为当前模式 "/computation"。因为在  [`Calculator1`](https://logback.qos.ch/xref/chapters/onJoran/calculator/Calculator1.html) 中我们为 "/computation" 模式关联了一个 [`ComputationAction1`](https://logback.qos.ch/xref/chapters/onJoran/calculator/ComputationAction1.html) 实例。`ComputationAction1` 实例中的 `begin()` 方法将会被调用
+-   开始事件对应的 \<litera\> 元素转换为当前模式 "/computation/literal"。为 "/computation/literal" 关联了一个 [`LiteralAction`](https://logback.qos.ch/xref/chapters/onJoran/calculator/LiteralAction.html) 实例。`LiteralAction` 实例中的 `begin()` 方法将会被调用。
+-   同样的，结束事件对应的 \<computation\> 元素将会触发 `ComputationAction1` 实例中的 `end()` 方法的调用。
+
+有意思的是动作相互合作的方式。`LiteralAction` 读取到一个字面值，并将其放到对象栈中，由 `InterpretationContext` 来维护。一旦完成，其它的动作可以获取该值或者对其进行更改。`ComputationAction1` 类的 `end()` 方法从栈中获取值，并打印。
+
+下一个例子中， *calculator2.xml* 有点复杂，但是更加有趣。
+
+>   有趣个鸡儿
+
+>   Example：*calculator2.xml*
+
+```xml
+<computation name="toto">
+  <literal value="7"/>
+  <literal value="3"/>
+  <add/>
+  <literal value="3"/>
+  <multiply/>
+</computation>
+```
+
+在之前的例子中，为了响应 \<literal\> 元素，[`LiteralAction`](https://logback.qos.ch/xref/chapters/onJoran/calculator/LiteralAction.html) 实例会将 value 属性对应的整数放到解析上下文中的栈顶。在这个例子中，也就是 *calculator2.xml*，这个值是 7 与 3。为了响应 \<add\> 元素。[`AddAction`](https://logback.qos.ch/xref/chapters/onJoran/calculator/AddAction.html) 实例将会获取之前放进去的两个整数，计算它们的和，然后再放进去。如，在解析上下文栈顶的就是 10 (= 7 + 3)。下个 literal 元素将会让 LiteralAction 将会将整数 3 放入栈顶。为了响应 \<multiply\> 元素，[`MultiplyAction`](https://logback.qos.ch/xref/chapters/onJoran/calculator/MultiplyAction.html) 将会获取之前放入的两个整数 10 与 3，然后计算它们的乘积。它会将结果 30 放入栈顶。最后，为了响应结束事件对应的 \</computation\> 标签，ComputationAction1 将会打印堆栈顶部的结果，因此，运行：
+
+```java
+java chapters.onJoran.calculator.Calculator1 src/main/java/chapters/onJoran/calculator/calculator2.xml
+```
+
+将会输出：
+
+```java
+The computation named [toto] resulted in the value 30
+```
+
+### 默认动作
+
+目前定义的队则都是被显示的动作调用。因为当前元素相关的模式/动作能够在规则存储中被找到。但是，在高度可以扩展的系统中，组件的数量跟类型都会非常多，因此对所有的模式都关联一个具体的动作将会变得十分的蛋疼。
+
+同时，甚至在高扩展的系统中，可以看到重复的规则关联了不同的部分。
 
