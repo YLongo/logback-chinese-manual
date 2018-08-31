@@ -176,4 +176,8 @@ The computation named [toto] resulted in the value 30
 
 同时，甚至在高扩展的系统中，可以看到重复的规则关联了不同的部分。如果我们可以识别这些规则，那么我们就可以在编译时处理由子组件组成的未知组件。例如，Apache Ant 有能力在编译时处理包含未知标签的任务，仅仅通过检查组件中的方法名是不是以 *add* 开头，像 `addFile` 或者 `addClassPath` 之类的。当 Ant 在任务内遇到一个内置的标签，它仅仅实例化一个匹配了任务类 add 方法的签名的对象，并且将结果对象附加到父级上。
 
-Joran 通过默认动作的形式来提供类似的功能。Joran 保留了一系列的默认动作，如果当前模式没有具体的模式可以匹配时，它们将会被应用。但是，应用默认的动作可能并不总是合适的。
+Joran 通过默认动作的形式来提供类似的功能。Joran 保留了一系列的默认动作，如果当前模式没有具体的模式可以匹配时，它们将会被应用。但是，应用默认的动作可能并不总是合适的。在执行默认的动作之前，Joran 会询问指定的动作当前的情况是否合适。只有动作返回肯定的回答，Joran 的配置器才会调用默认的动作。注意，这个额外的步骤可能支持多个默认的动作，如果在给定的情况下，没有合适的默认动作，也可能一个都不支持。
+
+你可以创建并注册一个自定义的默认动作。见下一个示例。该示例位于 *logback-examples/src/main/java/chapters/onJoran/implicit* 文件夹下。
+
+[`PrintMe`](https://logback.qos.ch/xref/chapters/onJoran/implicit/PrintMe.html) 应用将一个 [`NOPAction`](https://logback.qos.ch/xref/chapters/onJoran/implicit/NOPAction.html) 实例与 "*/foo" 模式相关联，也就是任何元素的名字叫做 "foo"。
