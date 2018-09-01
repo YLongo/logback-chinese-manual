@@ -180,4 +180,42 @@ Joran 通过默认动作的形式来提供类似的功能。Joran 保留了一�
 
 你可以创建并注册一个自定义的默认动作。见下一个示例。该示例位于 *logback-examples/src/main/java/chapters/onJoran/implicit* 文件夹下。
 
-[`PrintMe`](https://logback.qos.ch/xref/chapters/onJoran/implicit/PrintMe.html) 应用将一个 [`NOPAction`](https://logback.qos.ch/xref/chapters/onJoran/implicit/NOPAction.html) 实例与 "*/foo" 模式相关联，也就是任何元素的名字叫做 "foo"。
+[`PrintMe`](https://logback.qos.ch/xref/chapters/onJoran/implicit/PrintMe.html) 应用将一个 [`NOPAction`](https://logback.qos.ch/xref/chapters/onJoran/implicit/NOPAction.html) 实例与 "\*/foo" 模式相关联，也就是与名字叫做 "foo" 的任何元素。正如它的名字所示， `NOPAction` 的 `begin()` 与 `end()` 方法都为空。`PrintMe` 应用仍然会在它的默认动作列表注册一个 [PrintMeImplicitAction](https://logback.qos.ch/xref/chapters/onJoran/implicit/PrintMeImplicitAction.html) 的实例。`PrintMeImplicitAction` 对任何 *printme* 属性为 true 的元素有效。参见 `PrintMeImplicitAction` 的 `isApplicable()` 方法。`PrintMeImplicitAction` 的 `begin()` 方法会在控制台打印当前元素的名字。
+
+*implicit1.xml* XML 文档说明了默认动作是如何起作用的。
+
+> Example: *implicit1.xml* 
+
+```xml
+<foo>
+  <xyz printme="true">
+    <abc printme="true"/>
+  </xyz>
+
+  <xyz/>
+
+  <foo printme="true"/>
+
+</foo>
+```
+
+运行：
+
+```java
+java chapters.onJoran.implicit.PrintMe src/main/java/chapters/onJoran/implicit/implicit1.xml
+```
+
+输出：
+
+```java
+Element [xyz] asked to be printed.
+Element [abc] asked to be printed.
+20:33:43,750 |-ERROR in c.q.l.c.joran.spi.Interpreter@10:9 - no applicable action for [xyz], current pattern is [[foo][xyz]]
+```
+
+给定一个 `NOPAction` 实例与 "*\/foo*" 实例相关联，`NOPAction` 的 `begin()` 与 `end()` 方法在 \<foo\> 元素上被调用。`PrintMeImplicitAction` 不会在任何 \<foo\> 元素上触发。对于其它的元素，因为没有明确的动作可以匹配，所以 `PrintMeImplicitAction` 的 `isApplicable()` 方法被调用。
+
+
+
+
+
