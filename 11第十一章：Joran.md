@@ -213,7 +213,13 @@ Element [abc] asked to be printed.
 20:33:43,750 |-ERROR in c.q.l.c.joran.spi.Interpreter@10:9 - no applicable action for [xyz], current pattern is [[foo][xyz]]
 ```
 
-给定一个 `NOPAction` 实例与 "*\/foo*" 实例相关联，`NOPAction` 的 `begin()` 与 `end()` 方法在 \<foo\> 元素上被调用。`PrintMeImplicitAction` 不会在任何 \<foo\> 元素上触发。对于其它的元素，因为没有明确的动作可以匹配，所以 `PrintMeImplicitAction` 的 `isApplicable()` 方法被调用。
+给定一个 `NOPAction` 实例与 "*\/foo*" 实例相关联，`NOPAction` 的 `begin()` 与 `end()` 方法在 \<foo\> 元素上被调用。`PrintMeImplicitAction` 不会在任何 \<foo\> 元素上触发。对于其它的元素，因为没有明确的动作可以匹配，所以 `PrintMeImplicitAction` 的 `isApplicable()` 方法被调用。它只有在 *printme* 属性设置为 true 的时候才会返回 true。也就是第一个 \<xyz\> 元素 (不是第二个) 与 \<abc\> 元素。第十行的第二个 \<xyz\> 元素，没有可用的动作，所以生成了一个内部的错误信息。这个信息通过 `PrintMe` 的最后一行代码 `StatusPrinter.print` 来进行输出。这也解释了上面的输出。
+
+### 在实践中使用默认动作
+
+logback-classic 与 logback-access 各自的 Joran 配置器只包含两个默认的动作，叫做 [`NestedBasicPropertyIA`](https://logback.qos.ch/xref/ch/qos/logback/core/joran/action/NestedBasicPropertyIA.html) 与 [`NestedComplexPropertyIA`](https://logback.qos.ch/xref/ch/qos/logback/core/joran/action/NestedComplexPropertyIA.html)。
+
+`NestedBasicPropertyIA` 适用于任何属性的类型为原始类型 (或者  equivalent object type in the `java.lang` 包中的对象类型 )，枚举类，或者其它遵循 "valuesOf" 约定的类型。这些属性被称之为*基本* 或者*简单* 属性。如果一个类它包含一个名为 `valueOf()` 的静态方法，接受一个 `java.lang.String` 作为参数并且返回相关类型的实例，那么就说这个类遵循 "valueOf" 约定。目前，[`Level`](https://logback.qos.ch/xref/ch/qos/logback/classic/Level.html)，[`Duration`](https://logback.qos.ch/xref/ch/qos/logback/core/util/Duration.html)，以及 [`FileSize`](https://logback.qos.ch/xref/ch/qos/logback/core/util/FileSize.html) 类遵循这个约定。
 
 
 
