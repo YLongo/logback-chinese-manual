@@ -32,7 +32,7 @@ Joran 实际上是一个通用的配置系统，能够被独立用于日志记�
 
 Joran 的模式本质上就是一个字符串。有两种形式的模式：*exact* 与 *wildcard*。模式 "a/b" 可以用来匹配嵌套在 `<a>` 元素中的 `<b>` 元素。因为 *exact* 匹配的设置，"a/b" 模式不会匹配其它的元素。
 
-wildcard 可以用来进行后缀与前缀匹配。例如，"\*/a" 可以用来匹配任何以 "a" 结尾的后缀，也就是 XML 文档中任何 `<a>` 元素，但是不包含任何嵌套在 `<a>` 中的元素。"a/\*"  将会匹配任何 `<a>` 开头的元素，但是不包括任何嵌套在 `<a>` 中的元素。
+wildcard 可以用来进行后缀与前缀匹配。例如，"\*/a" 可以用来匹配任何以 "a" 结尾的后缀，也就是 XML 文档中任何 `<a>` 元素，但是不包含任何嵌套在 `<a>` 中的元素。"a/\*"  将会匹配任何 `<a>` 开头的元素，即任何嵌套在 `<a>` 中的元素。
 
 ### 动作
 
@@ -221,7 +221,84 @@ logback-classic 与 logback-access 各自的 Joran 配置器只包含两个默�
 
 `NestedBasicPropertyIA` 适用于任何属性的类型为原始类型 (或者  equivalent object type in the `java.lang` 包中的对象类型 )，枚举类，或者其它遵循 "valuesOf" 约定的类型。这些属性被称之为*基本* 或者*简单* 属性。如果一个类它包含一个名为 `valueOf()` 的静态方法，接受一个 `java.lang.String` 作为参数并且返回相关类型的实例，那么就说这个类遵循 "valueOf" 约定。目前，[`Level`](https://logback.qos.ch/xref/ch/qos/logback/classic/Level.html)，[`Duration`](https://logback.qos.ch/xref/ch/qos/logback/core/util/Duration.html)，以及 [`FileSize`](https://logback.qos.ch/xref/ch/qos/logback/core/util/FileSize.html) 类遵循这个约定。
 
+`NestedComplexPropertyIA` 适用于 `NestedBasicPropertyIA` 不适用的情况，并且如果对象栈顶部的对象具有当前属性名的 set 与 add 方法，那么该属性名相当于当前元素的名称。这些属性可以反过来包含其它的组件。因此，这些属性可以说是有点*复杂*。由于复杂属性的存在，[`NestedComplexPropertyIA`](https://logback.qos.ch/xref/ch/qos/logback/core/joran/action/NestedComplexPropertyIA.html) 将会为内部组件实例化一个合适的类，并且通过使用父组件以及内部元素名的 set/add 方法将其附加到父组件上 (在对象栈的顶部)。相应的类通过当前 (内置) 元素的 *class* 属性来指定。但是，如果没有指定 *class* 属性，那么将会根据是否满足以下其中之一的条件来使用默认的类名。
 
+1. 父对象属性指定的类有内部的规则相关联
+2. set 方法包含一个指定类的 @DefaultClass 属性
+3. set 方法的参数类型是一个含有共有构造方法的实体类
 
+#### 默认类映射
 
+在 logback-classic，有一些内部的规则将父 类/属性 名映射为默认的类。这些规则如下表所示：
 
+| 父类                                           | 属性名    | 默认类                                              |
+| ---------------------------------------------- | --------- | --------------------------------------------------- |
+| ch.qos.logback.core.AppenderBase               | encoder   | ch.qos.logback.classic.encoder.PatternLayoutEncoder |
+| ch.qos.logback.core.UnsynchronizedAppenderBase | encoder   | ch.qos.logback.classic.encoder.PatternLayoutEncoder |
+| ch.qos.logback.core.AppenderBase               | layout    | ch.qos.logback.classic.PatternLayout                |
+| ch.qos.logback.core.UnsynchronizedAppenderBase | layout    | ch.qos.logback.classic.PatternLayout                |
+| ch.qos.logback.core.filter.EvaluatorFilter     | evaluator | ch.qos.logback.classic.boolex.JaninoEventEvaluator  |
+
+在以后的版本中，这个列表可能会发生改变。最新的规则，请查看 logback-classic 中 [JoranConfigurator](https://logback.qos.ch/xref/ch/qos/logback/classic/joran/JoranConfigurator.html) 中的 `addDefaultNestedComponentRegistryRules` 方法。
+
+#### 属性集
+
+除了单个简单属性以及单个复杂属性外，logback 的默认动作支持属性集，它们可以是简单的或者复杂的。指定的属性通过 "add" 方法，而不是 set 方法。
+
+### 动态添加新规则
+
+Joran 包含一个允许 Joran 在解析 XML 文档的过程中，动态解析新规则的动作。示例代码，查看 *logback-examples/src/main/java/chapters/onJoran/newRule/* 文件夹。在这个包中，[`NewRuleCalculator`](https://logback.qos.ch/xref/chapters/onJoran/newRule/NewRuleCalculator.html) 仅仅设置两个规则，一个用来处理最顶层的元素，一个用来学习新规则。下面是 `NewRuleCalculator` 中相关的代码：
+
+```java
+ruleMap.put(new Pattern("*/computation"), new ComputationAction1());
+ruleStore.addRule(new Pattern("/computation/newRule"), new NewRuleAction());
+```
+
+[`NewRuleAction`](https://logback.qos.ch/xref/ch/qos/logback/core/joran/action/NewRuleAction.html) 是 logback-core 的一部分，跟其它的动作非常的类似。它有 `begin()` 与 `end()` 方法，在每次解析器找到一个 *newRule*  元素时被调用。当被调用时，`begin()` 方法会去寻找 *pattern* 与 *actionClass* 属性。然后实例化相应的动作类，并将模式/动作作为一条新规则添加到 Joran 的规则存储中。
+
+下面是如何在 xml 文件添加一条新规则：
+
+```xml
+<newRule pattern="*/computation/literal"
+          actionClass="chapters.onJoran.calculator.LiteralAction"/>
+```
+
+使用 newRule 声明，我们可以看到 `NewRuleCalculator` 表现出跟之前看到的 `Calculator1` 同样的结果。包括计算在内，我们可以按照如下的方式进行表示：
+
+> Example: *newRule.xml*
+
+```xml
+<computation name="toto">
+  <newRule pattern="*/computation/literal" 
+            actionClass="chapters.onJoran.calculator.LiteralAction"/>
+  <newRule pattern="*/computation/add" 
+            actionClass="chapters.onJoran.calculator.AddAction"/>
+  <newRule pattern="*/computation/multiply" 
+            actionClass="chapters.onJoran.calculator.MultiplyAction"/>
+
+  <computation>
+    <literal value="7"/>
+    <literal value="3"/>
+    <add/>
+  </computation>   
+ 
+  <literal value="3"/>
+  <multiply/>
+</computation>
+```
+
+```java
+java chapters.onJoran.newRule.NewRuleCalculator src/main/java/chapters/onJoran/newRule/newRule.xml
+```
+
+> 作者原文中的命令写了两个 java
+
+输出：
+
+```java
+The computation named [toto] resulted in the value 30
+```
+
+跟[之前](https://github.com/Volong/logback-chinese-manual/blob/master/11%E7%AC%AC%E5%8D%81%E4%B8%80%E7%AB%A0%EF%BC%9AJoran.md#%E5%8A%A8%E4%BD%9C%E7%9B%B8%E4%BA%92%E5%90%88%E4%BD%9C)的结果一致。
+
+> 运行原文中的示例并不会输出坐着所说的结果，需要去掉 \<computation\> 中的 \<computation\> 标签才可以
