@@ -10,4 +10,29 @@
 
 ## 自动导入
 
-**`1.0.10 以后`** 为了减少不必要的引用
+**`1.0.10 版本以后`** 为了减少不必要的引用，一些共同的类以及包会被自动导入。因此，只要你只是配置了内置的 appender，layout 等等，你不需要在你的脚本中添加相对应的导入语句。当然，对于默认导入不会涉及到类，你需要自己导入。
+
+下面是默认导入的列表：
+
+-   import ch.qos.logback.core.*;
+-   import ch.qos.logback.core.encoder.*;
+-   import ch.qos.logback.core.read.*;
+-   import ch.qos.logback.core.rolling.*;
+-   import ch.qos.logback.core.status.*;
+-   import ch.qos.logback.classic.net.*;
+-   import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
+
+另外，`ch.qos.logback.classic.Level` 中的所有常量 (大写) 都会被静态导入，以及小写的别名。也就是说在你的脚本中可以引用 *INFO* 以及 *info*，而不需要使用静态导入语句。
+
+## 不再支持 SiftingAppender
+
+**`1.0.12 版本以后`** 在 groovy 配置文件中不再支持 `SiftingAppender`。但是，如果有需要，可以重新引进。
+
+## *logback.groovy* 特定的拓展
+
+**本质上，*logback.groovy* 语法包含以下所说的六个方法；按照它们习惯上相反的顺序出现。**严格来说，这些方法的调用顺序并**不**重要，但是有一个例外：appender **必须**附加到 logger 之前被定义。
+
+- ### root(Level level, List\<String\> appenderNames = [])
+
+`root` 方法可以用来设置 root logger 的日志级别。第二个可选参数的类型为 `List<String>`，可以用来添加之前定义的 appender 的名字。如果你不想指定 appenderNames，那么就是一个空 (empty) 的列表。在 Groovy 中，用 `[]` 表示一个空的列表。
+
