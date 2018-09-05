@@ -30,9 +30,119 @@
 
 ## *logback.groovy* 特定的拓展
 
-**本质上，*logback.groovy* 语法包含以下所说的六个方法；按照它们习惯上相反的顺序出现。**严格来说，这些方法的调用顺序并**不**重要，但是有一个例外：appender **必须**附加到 logger 之前被定义。
+**本质上，*logback.groovy* 语法包含以下所说的六个方法；按照它们习惯上相反的顺序出现。**严格来说，这些方法的调用顺序并**不**重要，但是有一个例外：appender 附加到 logger 之前**必须**被定义。
 
 - ### root(Level level, List\<String\> appenderNames = [])
 
 `root` 方法可以用来设置 root logger 的日志级别。第二个可选参数的类型为 `List<String>`，可以用来添加之前定义的 appender 的名字。如果你不想指定 appenderNames，那么就是一个空 (empty) 的列表。在 Groovy 中，用 `[]` 表示一个空的列表。
+
+设置 root logger 的级别为 WARN，你可以这样写：
+
+```groovy
+root(WARN)
+```
+
+设置 root logger 的级别为 INFO，并且将名为 "CONSOLE" 与 "FILE" 的 appender 附加到 root 上，你可以这样写：
+
+```groovy
+root(INFO, ["CONSOLE", "FILE"])
+```
+
+在前面的例子中，假设名为 "CONSOLE" 与 "FILE" 的 appender 已经被定义好了。很快将会讨论有关 appender 的定义。
+
+- ### logger(String name, Level level, List\<String> appenderNames = [], Boolean additivity = null)
+
+`logger()` 方法接收四个参数，最后两个是可选的。第一个参数表示配置 logger 的名字。第二参数表示指定 logger 的级别。设置 logger 的级别为 `null` 将强制它从它最近的祖先那里[继承](https://github.com/Volong/logback-chinese-manual/blob/master/02%E7%AC%AC%E4%BA%8C%E7%AB%A0%EF%BC%9A%E6%9E%B6%E6%9E%84.md#%E6%9C%89%E6%95%88%E7%AD%89%E7%BA%A7%E5%8F%88%E7%A7%B0%E4%B8%BA%E7%AD%89%E7%BA%A7%E7%BB%A7%E6%89%BF)级别。第三个参数的类型为 `List<String>`，是可选的，默认为空列表。列表中 appender 会被附加到指定的 logger 上去。第四个参数的类型为 `Boolean`，也是可选的，用来控制[叠加性](https://github.com/Volong/logback-chinese-manual/blob/master/02%E7%AC%AC%E4%BA%8C%E7%AB%A0%EF%BC%9A%E6%9E%B6%E6%9E%84.md#appender-%E4%B8%8E-layout)。如果忽略，默认值为 `null`。
+
+例如，下面这个脚本设置 "com.foo" 这个 logger 的级别为 INFO：
+
+```groovy
+logger("com.foo", INFO)
+```
+
+下个脚本设置 "com.foo" 这个 logger 的级别为 DEBUG，并且将名为 "CONSOLE" 的 appender 附加到其上：
+
+```groovy
+logger("com.foo", DEBUG, ["CONSOLE"])
+```
+
+下个脚本跟上一个类似，只是这个还设置了 "com.foo" 这个 logger 的叠加性为 false：
+
+```groovy
+logger("com.foo", DEBUG, ["CONSOLE"]，false)
+```
+
+- ### appender(String name, Class clazz, Closure closure = null)
+
+appender 方法的第一个参数接收 appender 的名字进行配置。第二个参数是强制的，表示 appender 实例化的类。第三个参数包含更多的配置信息。如果忽略，默认为 null。
+
+大部分 appender 都需要设置属性，并且注入子组件才能正常工作。属性通过 '=' 进行设置。子组件的注入通过调用以属性命名的方法，并且将实例化的类作为参数传递给该方法。这个约定可以被递归的应用到配置的属性以及任何 appender 子组件的子组件中。这个方法是 *logback.groovy* 的核心，可能是唯一需要去学习的约定。
+
+例如，接下来的脚本实例化一个 `FileAppender` 命名为 "FILE"，设置它的 `file` 属性为 "testFile.log"，以及它的 `append` 属性设置为 false。类型为 `PatternLayoutEncoder` 的 encoder 被注入到这个 appender 中。encoder 的模式属性设置为 "%level %logger - %msg%n"。然后将这个 appender 附加到 root logger 上。
+
+```groovy
+appender("FILE", FileAppender) {
+    file = "testFile.log"
+    append = false
+    encoder(PatternLayoutEncoder) {
+        pattern = "%level %logger - %msg%n"
+    }
+}
+
+root(DEBUG, ["FILE"])
+```
+
+- ### timestamp(String datePattern, long timeReference = -1)
+
+`timestamp()` 方法根据 `datePattern` 将 `timeReference` 参数格式化，返回一个对应的字符串。`datePattern` 参数应该尊村 [SimpleDateFormat](https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html) 中定义的约定。如果 `timeReference` 没有指定，那么默认为 -1。在这种情况下，当解析配置文件时，当前时间作为 `timeReference` 参数的值。
+
+在下个例子中，`bySecond` 变量表示被 "yyyyMMdd'T'HHmmss" 格式化之后的当前时间。之后，"bySecond" 变量被用于 `file` 属性的定义中。
+
+```groovy
+def bySecond = timestamp("yyyyMMdd'T'HHmmss")
+
+appender("FILE", FileAppender) {
+    file = "log-${bySecond}.txt"
+    encoder(PatternLayoutEncoder) {
+        pattern = "%logger{35} - %msg%n"
+    }
+}
+
+root(DEBUG, ["FILE"])
+```
+
+- ### conversionRule(String conversionWord, Class converterClass)
+
+在创建了你自己的[转换说明符](https://github.com/Volong/logback-chinese-manual/blob/master/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayouts.md#%E8%87%AA%E5%AE%9A%E4%B9%89%E8%BD%AC%E6%8D%A2%E8%AF%B4%E6%98%8E%E7%AC%A6)之后，你需要通知 logback 它的存在。下面这个简单的 logback.groovy 文件告诉 logback 在遇到 `%sample` 转换字符时使用 MySampleConverter。
+
+```groovy
+import chapters.layouts.MySampleConverter
+
+conversionRule("sample", MySampleConverter)
+appender("STDOUT", ConsoleAppender) {
+    encoder(PatternLayoutEncoder) {
+        pattern = "%-4relative [%thread] %sample - %msg%n"
+    }
+}
+
+root(DEBUG, ["STDOUT"])
+```
+
+- ### scan(String scanPeriod = null)
+
+调用 scan() 方法告诉 logback 周期性的扫描 logback.groovy 文件的变化。当检测到变化时，*logback.groovy* 文件会被重新加载。
+
+```groovy
+scan()
+```
+
+默认情况下，一分钟扫描一次配置文件。你可以通过 "scanPeriod" 来指定一个不同的扫描周期。它的值可以被指定以 milliseconds, seconds, minutes 或者 hours 位单位。例如：
+
+```groovy
+scan("30 seconds")
+```
+
+如果没有指定时间单位，那么默认的时间单位为 milliseconds，但是通常来说是不合适的 (既然不合适，为什么默认还是毫秒，费解🤔)。如果你更改了默认的扫描周期，记得要指定时间单位。更多关于扫描工作的细节，请查看[自动加载](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%BD%93%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%9B%B4%E6%94%B9%E6%97%B6%E8%87%AA%E5%8A%A8%E5%8A%A0%E8%BD%BD)部分。
+
+
 
