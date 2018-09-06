@@ -144,5 +144,108 @@ scan("30 seconds")
 
 如果没有指定时间单位，那么默认的时间单位为 milliseconds，但是通常来说是不合适的 (既然不合适，为什么默认还是毫秒，费解🤔)。如果你更改了默认的扫描周期，记得要指定时间单位。更多关于扫描工作的细节，请查看[自动加载](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E5%BD%93%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%9B%B4%E6%94%B9%E6%97%B6%E8%87%AA%E5%8A%A8%E5%8A%A0%E8%BD%BD)部分。
 
+-   ### statusListener(Class listenerClass)
 
+你可以通过调用 `statusListener` 方法，并给该方法传递一个监听器类，来添加一个状态监听器。例：
+
+```groovy
+import chapters.layouts.MySampleConverter
+
+// 强烈建议在最后一个导入语句之后，其它所有语句之前添加状态监听器
+statusListener(OnConsoleStatusListener)
+```
+
+关于[状态监听器](https://github.com/Volong/logback-chinese-manual/blob/master/03%E7%AC%AC%E4%B8%89%E7%AB%A0%EF%BC%9Alogback%20%E7%9A%84%E9%85%8D%E7%BD%AE.md#%E7%9B%91%E5%90%AC%E7%8A%B6%E6%80%81%E4%BF%A1%E6%81%AF)请查看之前的章节。
+
+-   ### jmxConfigurator(String name)
+
+你可以通过该方法注册一个 [`JMXConfigurator`](https://logback.qos.ch/manual/jmxConfig.html) MBean。无参调用将会使用 logback 默认的对象名 (`ch.qos.logback.classic:Name=default,Type=ch.qos.logback.classic.jmx.JMXConfigurator`) 去注册 MBean。
+
+```groovy
+jmxConfigurator()
+```
+
+要改变 `Name` 键的值，而不是 "default"，仅仅只需要给 `jmxConfigurator` 方法传递一个不同的名字参数就可以了。
+
+```groovy
+jmxConfigurator('MyName')
+```
+
+如果你想要完整的定义对象名，可以使用同样的语法，但是需要传递一个有效的对象名字符串作为参数：
+
+```groovy
+jmxConfigurator('myApp:type=LoggerManager')
+```
+
+该方法首先会去尝试将该参数作为对象名，如果它不表示一个有效的对象名，则会把它当作 "Name" 键的值。
+
+## 内置 DSL
+
+*logback.groovy* 是一个内置 DSL 的意思是，它的内容可以作为 Groovy 脚本执行。因此，所有常用的 Groovy 指令，例如类的导入，GString，变量的定义，包含字符串 (GString) 的 \${..} 评估表达式，if-else 语句这些在 logback.groovy 文件中都是可用的。在接下来的讨论中，我们将会展示 Groovy 指令在 *logback.groovy* 文件中的典型用法。
+
+### 变量定义与 GString
+
+你可以在 *logback.groovy* 文件中的任何地方定义变量，然后在 GString 中使用该变量。例如：
+
+```groovy
+def USER_HOME = System.getProperty("user.home")
+
+appender("FILE", FileAppender) {
+    // 使用 USER_HOME 变量
+    file = "${USER_HOME}/myApp.log"
+    encoder(PatternLayoutEncoder) {
+        pattern = "%msg%n"
+    }
+}
+root(DEBUG, ["FILE"])
+```
+
+### 在控制台打印
+
+通过调用 Groovy 的 `println` 方法在控制台进行打印。例如：
+
+```groovy
+def USER_HOME = System.getProperty("user.home");
+println "USER_HOME=${USER_HOME}"
+
+appender("FILE", FileAppender) {
+    println "Setting [file] property to [${USER_HOME}/myApp.log]"
+    file = "${USER_HOME}/myApp.log"
+    encoder(PatternLayoutEncoder) {
+        pattern = "%msg%n"
+    }
+}
+root(DEBUG, ["FILE"])
+```
+
+### 自动输出字段
+
+#### 'hostname' 变量
+
+'hostname' 变量包含当前 host 的名字。但是由于作用域规则，所以作者不能完全解释清楚 (😓)。'hostname' 变量只在最上层的作用域中有效，但是在内部的作用域中无效。下面的例子应该可以解释这一点：
+
+```groovy
+// 如果当前 host 的名字为 x，那么将会输出 "hostname is x"
+println "hostname is ${hostname}"
+
+appender("STDOUT", ConsoleAppender) {
+    // 将会输出 "hostname is null"
+    println "hostname is ${hostname}"
+}
+```
+
+如果你想要在所有的作用域中使用 hostname 变量。那么你需要定义一个变量，并将 'hostname' 的值赋给它。如下：
+
+```groovy
+// 将 hostname 的值赋给 HOSTNAME
+def HOSTNAME = hostname
+
+// 如果当前 host 的名字为 x，那么将会输出 "hostname is x"
+println "hostname is ${HOSTNAME}"
+
+appender("STDOUT", ConsoleAppender) {
+    // 如果当前 host 的名字为 x，那么将会输出 "hostname is x"
+    println "hostname is ${HOSTNAME}"
+}
+```
 
