@@ -38,4 +38,5 @@ logback 手册尽可能详细的描述了 logback API，包括它的特性以及
 [第九章：日志隔离](https://github.com/Volong/logback-chinese-manual/blob/master/09%E7%AC%AC%E4%B9%9D%E7%AB%A0%EF%BC%9A%E6%97%A5%E5%BF%97%E9%9A%94%E7%A6%BB.md)  
 [第十章：JMX 配置器](https://github.com/Volong/logback-chinese-manual/blob/master/10%E7%AC%AC%E5%8D%81%E7%AB%A0%EF%BC%9AJMX%20%E9%85%8D%E7%BD%AE%E5%99%A8.md)  
 [第十一章：Joran](https://github.com/Volong/logback-chinese-manual/blob/master/11%E7%AC%AC%E5%8D%81%E4%B8%80%E7%AB%A0%EF%BC%9AJoran.md)  
-[第十二章：Groovy 配置](https://github.com/Volong/logback-chinese-manual/blob/master/12%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%EF%BC%9AGroovy%20%E9%85%8D%E7%BD%AE.md)
+[第十二章：Groovy 配置](https://github.com/Volong/logback-chinese-manual/blob/master/12%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%EF%BC%9AGroovy%20%E9%85%8D%E7%BD%AE.md)  
+[第十三章：从 log4j 迁移](https://github.com/Volong/logback-chinese-manual/blob/master/13%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%EF%BC%9A%E4%BB%8E%20log4j%20%E8%BF%81%E7%A7%BB.md)
