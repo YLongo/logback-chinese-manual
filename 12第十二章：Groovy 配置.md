@@ -249,3 +249,73 @@ appender("STDOUT", ConsoleAppender) {
 }
 ```
 
+### 任何对于当前上下文的引用都是上下文感知的
+
+*logback.groovy* 脚本是在 [ContextAware](https://logback.qos.ch/xref/ch/qos/logback/core/spi/ContextAware.html) 对象的范围内执行完成的。因此，在当前上下文的范围内，你可以使用 '`context`'，并且可以通过 `addInfo()`、`addWarn()`、与 `addError()` 方法将状态信息发送给上下文的 `StatusManager`。
+
+```groovy
+// 添加一个控制台转态监听器总是没错的
+statusListener(OnConsoleStatusListener)
+
+// 设置上下文的名字为 wombat
+context.name = 'wombat'
+
+// 添加一个关于上下文名字的状态信息
+addInfo("Context name has been set to ${context_name}")
+
+def USER_HOME = System.getProperty("user.home")
+
+// 添加关于 USRE_HOME 的状态信息
+addInfo("USER_HOME=${USER_HOME}")
+
+appender("FILE", FileAppender) {
+    addInfo("Setting [file] property to [${USER_NAME}/myApp.log]")
+    file = "${USER_HOME}/myApp.log"
+    encoder(PatternLayoutEncoder) {
+        pattern = "%msg%n"
+    }
+}
+root(DEBUG, ["FILE"])
+```
+
+### 条件配置
+
+由于 Groovy 是一种完全成熟的编程语言，条件语句允许单一的 *logback.groovy* 文件用来适用不同的环境，例如开发，测试以及生产。
+
+在下个脚本中，console appender 根据 host 来激活，而不是我们的生产环境 pixie 或 orion。rolling file appender 的输出目录也是根据 host 来确定。
+
+```groovy
+statusListener(OnConsoleStatusListener)
+
+def appenderList = ["ROLLING"]
+def WEBAPP_DIR = "."
+def consoleAppender = true;
+
+// hostname 是否匹配 pixie 或 orion
+if (hostname =~ /pixie|orion/) {
+    WEBAPP_DIR = "/opt/myapp"
+    consoleAppender = false
+} else {
+    appenderList.add("CONSOLE")
+}
+
+if (consoleAppender) {
+    appender("CONSOLE", ConsoleAppender) {
+        encoder(PatternLayoutEncoder) {
+            pattern = "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+        }
+    }
+}
+
+appender("ROLLING", RollingFileAppender) {
+    encoder(PatternLayoutEncoder) {
+        Pattern = "%d %level %thread %mdc %logger - %m%n"
+    }
+    rollingPolicy(TimeBasedRollingPolicy) {
+        FileNamePattern = "${WEBAPP_DIR}/log/translator-%d{yyyy-MM}.zip"
+    }
+}
+
+root(INFO, appenderList)
+```
+
