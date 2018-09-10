@@ -17,3 +17,46 @@
 
 ## Receivers 充当服务器角色
 
+一个 receiver 可以被配置为充当服务器的绝对，被动的监听远程 appender 即将到来的连接。这个功能类似于使用独立的 `SimpleSocketServer` 应用，特别是在使用 receiver 组件时，*任何* 应用仅仅只需要在 *logback.xml* 中配置 receiver 就可以使用 logback-classic 接收来自远程 appender 的日志事件。
+
+![serverSocketReceiver.png](images/serverSocketReceiver.png)
+
+logback 包含两个 receiver 组件用于充当服务器角色。[`ServerSocketReceiver`](https://logback.qos.ch/xref/ch/qos/logback/classic/net/server/ServerSocketReceiver.html) 以及它支持 SSL 的子类型 [`SSLServerSocketReceiver`](https://logback.qos.ch/xref/ch/qos/logback/classic/net/server/SSLServerSocketReceiver.html)。这两个 receiver 组件都被设计成用来接收来自于 `SocketAppender` (或者 `SSLSocketAppender`) 客户端的连接。
+
+`ServerSocketReceiver` 组件提供以下配置属性：
+
+| 属性名      | 类型               | 描述                                                         |
+| ----------- | ------------------ | ------------------------------------------------------------ |
+| **address** | `String`           | receiver 监听的本地网络接口。如果没有指定这个属性，那么将监听所有的网络接口。 |
+| **port**    | `int`              | receiver 监听的 TCP 端口。如果这个属性没有被指定，将会使用一个默认的值。(译者注：默认的端口为 4560) |
+| **ssl**     | `SSLConfiguration` | 仅仅支持 `SSLServerSocketReceiver`。这个属性提供了 receiver 使用的 SSL 配置。详情请见 [第十五章](https://logback.qos.ch/manual/usingSSL.html) |
+
+### 使用 ServerSocketReceiver
+
+下面的配置使用 `ServerSocketReceiver` 组件，它使用最小的本地 appender 以及 logger 配置。接收来自远程 appender 的日志事件，将会匹配到 root logger，并输出到本地的 console appender。
+
+>   Example: receiver1.xml
+
+```xml
+<configuration debug="true">
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE" />
+  </root>
+
+  <receiver class="ch.qos.logback.classic.net.server.ServerSocketReceiver">
+    <port>${port}</port>
+  </receiver>
+
+</configuration>
+```
+
+receiver 组件的 *class* 属性表明了我们想要使用的 receiver 子类型。在这个例子中，我们使用 `ServerSocketReceiver`。
+
+我们示例中的服务器应用在功能与设计上与 `SimpleSocketServer` 非常的类似。它仅仅接收 logback 配置文件的路径作为命令行的参数，并运行给定的配置。虽然我们的示例程序很简单，但是请记住，你可以在*任何*应用中配置 logback 的 `ServerSocketReceiver` (或者 `SSLServerSocketReceiver`) 组件。
