@@ -155,3 +155,112 @@ logback 包含两个 receiver 组件用于充当客户端角色：[`SocketReceiv
 
 ### 使用 SocketReceiver
 
+用于 `SocketReceiver` 的配置跟之前使用 `ServerSocketReceiver` 的示例非常的相似。不同的地方在于客户端与服务端的角色反转了。`SocketReceiver` 类型的 receiver 为客户端，远程 appender 充当服务器的角色。
+
+>   Example: receiver3.xml
+
+```xml
+<configuration debug="true">
+    
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">    
+    <encoder>
+      <pattern>%date %-5level [%thread] %logger - %message%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE" />
+  </root>  
+
+  <receiver class="ch.qos.logback.classic.net.SocketReceiver">
+    <remoteHost>${host}</remoteHost>
+    <port>${port}</port>
+    <reconnectionDelay>10000</reconnectionDelay>
+  </receiver>
+
+</configuration>
+```
+
+这个配置将会使 logback 连接通过 *host* 与 *port* 变量替换指定的主机与端口上的 `ServerSocketAppender`。将会通过 console appender 本地输出 (根据这里的配置文件) 从远程 appender 接收到的日志事件。
+
+你可以在 *logback-examples/* 文件夹下，通过以下命令运行示例中的配置文件：
+
+这个示例仅仅加载配置文件，然后仅仅等待来自远程 appender 的日志事件。如果你在远程 appender 没有运行的情况下运行这个示例，那么你将会周期性的看到*连接被拒绝*的日志消息输出。receiver 将会周期性的尝试重新连接远程 appender，直到连接成功或者 logger 上下文关闭。尝试的延迟间隔是可以通过 `reconnectionDelay` 属性来配置的，如示例配置中展示的一样。
+
+```shell
+java -Dhost=localhost -Dport=6000 \
+      chapters.receivers.socket.ReceiverExample \
+      src/main/java/chapters/receivers/socket/receiver3.xml
+```
+
+我们示例中的 receiver 连接之前使用过的同一个远程 apennder。这个示例加载一个包含 `ServerSocketAppender` 的配置，然后等待用户的输入，输入的消息将会被传递给已经连接上的 receiver。我们可以通过如下方式运行示例 appender 应用：
+
+```shell
+java -Dport=6000 \
+      chapters.receivers.socket.AppenderExample \
+      src/main/java/chapters/receivers/socket/appender3.xml
+```
+
+如果在 receiver 没有连接上的情况下输入消息，那么消息将会被丢弃。
+
+### 使用 SocketSSLReceiver
+
+`SSLSocketReceiver` 需要的配置跟使用 `SocketReceiver` 非常的类似。本质的区别在于通过 class 指定的 receiver，以及通过内嵌的 `ssl` 属性去指定 SSL 配置属性。下面是一个基础的示例：
+
+>   Example: receiver4.xml
+
+```xml
+<configuration debug="true">
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">    
+    <encoder>
+      <pattern>%date %-5level [%thread] %logger - %message%n</pattern>
+    </encoder>         
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE" />
+  </root>  
+ 
+  <receiver class="ch.qos.logback.classic.net.SSLSocketReceiver">
+    <remoteHost>${host}</remoteHost>
+    <port>${port}</port>
+    <reconnectionDelay>10000</reconnectionDelay>
+    <ssl>
+      <trustStore>
+        <location>${truststore}</location>
+        <password>${password}</password>
+      </trustStore>
+    </ssl>
+  </receiver>
+
+</configuration>
+```
+
+除了在上一个例子中展示的配置属性之外，*class* 属性现在指定了 `SSLSocketReceiver`。配置文件中包含了指定 trust strore 的位置与密码的 SSL 配置。用于验证远程 appender 是可以受信任的。查看[第十五章](https://logback.qos.ch/manual/usingSSL.html)获取更多关于配置 SSL 属性的信息。
+
+通过如下命令来运行示例配置：
+
+```shell
+java -Dhost=localhost -Dport=6001 \
+      -Dtruststore=file:src/main/java/chapters/appenders/socket/ssl/truststore.jks \
+      -Dpassword=changeit \
+      chapters.receivers.socket.ReceiverExample \
+      src/main/java/chapters/receivers/socket/receiver4.xml
+```
+
+一旦启动，receiver 尝试去连接指定的远程 appender。如果 appender 没有运行，那么你将会在日志输出中周期性的看到 "连接被拒" 的信息。在延迟了通过 `reconnectionDelay ` 指定的周期时间后，receiver 将会周期性的重试到远程 appender 的连接。
+
+我们示例中的 receiver 会连接之前使用过的远程 appender。这个示例加载包含了 `SSLServerSocketAppender` 的配置，然后等待用户的输入，输入的信息将会被传递给连接上的 receiver。通过如下方式运行示例 appender 应用：
+
+```shell
+java -Dport=6001 \
+      -Dkeystore=file:src/main/java/chapters/appenders/socket/ssl/keystore.jks \
+      -Dpassword=changeit \
+      chapters.receivers.socket.AppenderExample \
+      src/main/java/chapters/receivers/socket/appender4.xml
+```
+
+如果在 receiver 没有连接上的时候输入信息，那么信息将会被丢弃。
+
+需要再次注意的是，我们的示例使用的是仅适用于测试的自签名 X.509 证书。**在生产环境中，你应该获取适当的 X.509 证书来标识你的支持 SSL 的 logback 组件。**更多细节请查看[第十五章](https://logback.qos.ch/manual/usingSSL.html)。
