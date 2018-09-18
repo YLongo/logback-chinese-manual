@@ -59,5 +59,66 @@ Java 安全套接字拓展 (JSSE) 以及 Java 加密体系 (JCA) 用来实现 lo
 
 ### 高级 SSL 配置
 
-在特定的情况下，使用 JSEE 系统属性的基本 SSL 配置是不恰当的。比如，你想要在 web 应用中使用 `SSLServerSocketReceiver` 组件，你可能想要使用不同的证书为你的远程日志客户端标识你的日志服务器，而不是 web 服务器为了 web 客户端使用证书来标识自身。
+在特定的情况下，使用 JSEE 系统属性的基本 SSL 配置是不恰当的。比如，你想要在 web 应用中使用 `SSLServerSocketReceiver` 组件，你可能想要使用不同的证书为你的远程日志客户端标识你的日志服务器，而不是 web 服务器为了 web 客户端使用证书来标识自身。你可能想要在日志服务器上验证 SSL 客户端，确保只有真正授权的远程 logger 才可以连接。或者你的组织对于在组织所在的网络上使用 SSL 协议以及密码套件有严格的策略。为了满足这些需求，你需要使用 logback SSL 高级配置选项。
+
+在配置 logback 组件支持 SSL 时，你需要在组件的配置中指定 `ssl` 属性来指定 SSL 的配置。
+
+例如，如果你想要使用 `SSLServerSocketReceiver` 以及为日志服务器认证配置 key store 属性，你可以使用类似如下的配置：
+
+```xml
+<configuration>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+  
+  <root level="debug">
+    <appender-ref ref="CONSOLE" />
+  </root>
+
+  <receiver class="ch.qos.logback.classic.net.server.SSLServerSocketReceiver">
+    <ssl>
+      <keyStore>
+        <location>classpath:/logging-server-keystore.jks</location>
+        <password>changeit</password>
+      </keyStore>
+    </ssl>
+  </receiver> 
+
+</configuration>
+```
+
+该配置将 key store 的位置指定为位于应用类路径下的  *logging-server-keystore.jks*。你也可以通过 `file:` URL 来指定 key store 的位置。
+
+如果你想要在你的应用中使用 `SSLSocketAppender`，但是不想要改变默认 trust store 使用的 JSSE `javax.net.ssl.trustStore` 属性。你可以通过如下的方式进行配置：
+
+```xml
+<configuration>
+  <appender name="SOCKET" class="ch.qos.logback.classic.net.SSLSocketAppender">
+    <ssl>
+      <trustStore>
+        <location>classpath:/logging-server-truststore.jks</location>
+        <password>changeit</password>
+      </trustStore>
+    </ssl>
+  </appender>
+  
+  <root level="debug">
+    <appender-ref ref="SOCKET" />
+  </root>
+
+</configuration>
+```
+
+该配置将 key store 的位置指定为位于应用类路径下的  *logging-server-keystore.jks*。你也可以通过 `file:` URL 来指定 key store 的位置。
+
+#### SSL 配置属性
+
+JSSE 公开 了大量的可配置选项。logback 的 SSL 支持几乎所有这些可用的选项在支持 SSL 组件的配置中指定。在使用 XML 配置时，在组件的配置中，SSL 属性被嵌套在 `<ssl>` 元素中引入。这个配置元素对应 [`SSLConfiguration`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/SSLConfiguration.html) 类。
+
+
+
+
 
