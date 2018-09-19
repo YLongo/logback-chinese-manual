@@ -118,6 +118,21 @@ Java 安全套接字拓展 (JSSE) 以及 Java 加密体系 (JCA) 用来实现 lo
 
 JSSE 公开 了大量的可配置选项。logback 的 SSL 支持几乎所有这些可用的选项在支持 SSL 组件的配置中指定。在使用 XML 配置时，在组件的配置中，SSL 属性被嵌套在 `<ssl>` 元素中引入。这个配置元素对应 [`SSLConfiguration`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/SSLConfiguration.html) 类。
 
+当为你的组件配置 SSL 时，你仅仅只需要配置那些默认值不适合的 SSL 属性。过度指定 SSL 配置经常会导致一些难以诊断的问题。
+
+下面的表格展示了顶层的 SSL 配置属性。许多顶层的属性还有额外的子属性，这些子属性将会顶层属性之后描述。
+
+| 属性名                  | 类型                                                         | 描述                                                         |
+| ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| **keyManagerFactory**   | [`KeyManagerFactoryFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/KeyManagerFactoryFactoryBean.html) | 指定用于创建 [`KeyManagerFactory`](http://docs.oracle.com/javase/1.5.0/docs/api/javax/net/ssl/KeyManagerFactory.html) 的配置。如果这个属性没有配置，那么将会使用 Java 平台默认的 factory。见 [Key Manager Factory 配置](https://logback.qos.ch/manual/usingSSL.html#KeyManagerFactoryFactoryBean) |
+| **keyStore**            | [`KeyStoreFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/KeyStoreFactoryBean.html) | 指定用于创建 [`KeyStore`](http://docs.oracle.com/javase/1.5.0/docs/api/java/security/KeyStore.html) 的配置。通过这个属性创建的 KeyStore 必须包含唯一的 X.509 证书 (包含密钥，相应的证书以及 CA 认证链)。这个证书由本地 SSL 提供给远程的 SSL。<br />当配置一个 SSL 客户端时 (例如，`SSLSocketAppender`)，仅仅只有在远程配置需要验证客户端身份时才需要该属性。<br />当配置一个 SSL 服务端时 (例如，`SimpleSSLSocketServer`)，该属性指定的 key store 包含了服务端证书。如果没有配置这个属性，JSSE 的 `javax.net.ssl.keyStore` 系统属性必须配置用于提供服务端 key store 的位置。查看 [定制 JSEE](https://docs.oracle.com/javase/1.5.0/docs/guide/security/jsse/JSSERefGuide.html#InstallationAndCustomization) 来获取更多关于 JSEE 系统属性的信息。<br />更多的信息查看 [Key Store 配置](https://logback.qos.ch/manual/usingSSL.html#KeyStoreFactoryBean)。 |
+| **parameters**          | [`SSLParametersConfiguration`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/SSLParametersConfiguration.html) |                                                              |
+| **protocol**            | `String`                                                     |                                                              |
+| **provider**            | `String`                                                     |                                                              |
+| **secureRandom**        | [`SecureRandomFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/SecureRandomFactoryBean.html) |                                                              |
+| **trustManagerFactory** | [`TrustManagerFactoryFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/TrustManagerFactoryFactoryBean.html) |                                                              |
+| **trustStore**          | [`KeyStoreFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/KeyStoreFactoryBean.html) |                                                              |
+
 
 
 
