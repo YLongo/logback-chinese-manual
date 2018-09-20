@@ -135,7 +135,34 @@ JSSE 公开 了大量的可配置选项。logback 的 SSL 支持几乎所有这�
 
 #### Key Store 配置
 
+[`KeyStoreFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/KeyStoreFactoryBean.html) 指定创建包含 X.509 证书的 [`KeyStore`](http://docs.oracle.com/javase/1.5.0/docs/api/java/security/KeyStore.html) 所需要的配置。这个 factory bean 的属性能够用于 [SSL 配置](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#%E9%AB%98%E7%BA%A7-ssl-%E9%85%8D%E7%BD%AE) 中的 [keyStore](https://logback.qos.ch/manual/usingSSL.html#ssl.keyStore) 以及 [trustStore](https://logback.qos.ch/manual/usingSSL.html#ssl.trustStore) 属性。
 
+| 属性名       | 类型     | 描述                                                         |
+| ------------ | -------- | ------------------------------------------------------------ |
+| **location** | `String` | 指定 key store 的位置 URL。使用 `file:` 指定 keystore 在文件系统中的位置。使用 `classpath:` 指定 keystore 在类路径下的位置。如果 URL 没有指定具体的策略，那么将使用 `classpath:`。 |
+| **password** | `String` | 指定访问 keystore 的密码                                     |
+| **provider** | `String` | 指定用于创建 `KeyStore` 的 JCA 提供者的名字。如果没有指定该属性，那么将使用 Java 平台默认的 keystore 提供者。 |
+| **type**     | `String` | 指定 `KeyStore` 的类型。见 [命名规范](http://docs.oracle.com/javase/1.5.0/docs/guide/security/CryptoSpec.html#AppA)。如果没有指定该属性，那么将使用 Java 平台默认的 keystore 类型。 |
 
+#### Key Manager Factory 配置
 
+[`KeyManagerFactoryFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/KeyManagerFactoryFactoryBean.html) 指定创建 [`KeyManagerFactory`](http://docs.oracle.com/javase/1.5.0/docs/api/javax/net/ssl/KeyManagerFactory.html) 需要的配置。通常，没有必要详细的配置 key manager factory，因为平台默认的 factory 就可以满足大部分的需求。
+
+| 属性名        | 类型     | 描述                                                         |
+| ------------- | -------- | ------------------------------------------------------------ |
+| **algorithm** | `String` | 指定 `KeyManagerFactory` 算法的名字。见 [命名规范](http://docs.oracle.com/javase/1.5.0/docs/guide/security/CryptoSpec.html#AppA)。如果没有指定该属性，那么将会使用 Java 平台默认的 key manager 算法。 |
+| **provider**  | `String` | 指定生成 `SecureRandom` 生成器的 JCA 提供者的名字。如果没有指定该属性，那么将会使用 Java 平台默认的 JSSE 提供者。 |
+
+#### Secure Random Generator 配置
+
+[`SecureRandomFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/SecureRandomFactoryBean.html) 指定创建 [`SecureRandom`](http://docs.oracle.com/javase/1.5.0/docs/api/java/security/SecureRandom.html) 生成器所需要的配置。通常，没有必要详细的配置 secure random 生成器，因为平台默认的生成器就可以满足大部分的需求。
+
+| 属性名        | 类型     | 描述                                                         |
+| ------------- | -------- | ------------------------------------------------------------ |
+| **algorithm** | `String` | 指定 `SecureRandom` 算法的名字。见 [命名规范](http://docs.oracle.com/javase/1.5.0/docs/guide/security/CryptoSpec.html#AppA)。如果没有指定该属性，那么将会使用 Java 平台默认的随机数生成器 (random number generation) 算法。 |
+| **provider**  | `String` | 指定用于创建 `SecureRandom` 生成器的 JCA 提供者。如果没有指定该属性，那么将会使用 Java 平台默认的 JSSE 提供者。 |
+
+#### SSL 参数配置
+
+[`SSLParametersConfiguration`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/SSLParametersConfiguration.html) 允许定制受允许的 SSL 协议，密码套件，以及客户端认证选项。
 
