@@ -166,3 +166,25 @@ JSSE 公开 了大量的可配置选项。logback 的 SSL 支持几乎所有这�
 
 [`SSLParametersConfiguration`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/SSLParametersConfiguration.html) 允许定制受允许的 SSL 协议，密码套件，以及客户端认证选项。
 
+| Property Name            | Type      | Description                                                  |
+| ------------------------ | --------- | ------------------------------------------------------------ |
+| **excludedCipherSuites** | `String`  | 指定以逗号分隔的 SSL 密码套件的名字或者模式列表，用来在会话期间进行禁用。这个属性通过 SSL 引擎过滤密码套件。任何被该属性匹配到的密码套件都会被禁用。<br />以逗号分割的各个字段可以是字符串或者正则表达式。<br />查看密码套件的[命名规则](https://docs.oracle.com/javase/1.5.0/docs/guide/security/jsse/JSSERefGuide.html#AppA) |
+| **includedCipherSuites** | `String`  | 与上一个属性除了作用相反，其它都是一样 (懒得翻译了)。        |
+| **excludedProtocols**    | `String`  | 这个是表示需要排除的 SSL 协议。与上一个属性，除了作用不同，其它都一样。 |
+| **includedProtocols**    | `String`  | 与上一个协议作用相反，其它一致。                             |
+| **needClientAuth**       | `boolean` | 设置属性为 `true` 表示，服务端需要一个有效的客户端证书。当客户端组件为 `SSLSocketAppender` 时，该属性会被忽略。 |
+| **wantClientAuth**       | `boolean` | 设置属性为 `true` 表示，服务端想要一个有效的客户端证书。当客户端组件为 `SSLSocketAppender` 时，该属性会被忽略。(与上一个属性的差异，需要自己动手去实践。因为我也不清楚😂) |
+
+#### Trust Manager Factory 配置
+
+[`TrustManagerFactoryFactoryBean`](https://logback.qos.ch/xref/ch/qos/logback/core/net/ssl/TrustManagerFactoryFactoryBean.html) 指定创建 [`TrustManagerFactory`](http://docs.oracle.com/javase/1.5.0/docs/api/javax/net/ssl/TrustManagerFactory.html) 所需要的配置。通常，没有必要明确的配置 trust manager factory，平台默认的 factory 就可以满足大部分的需要。
+
+| 属性名        | 类型     | 描述                                                         |
+| ------------- | -------- | ------------------------------------------------------------ |
+| **algorithm** | `String` | 指定 `TrustManagerFactory` 算法的名字。见 [命名标准](https://docs.oracle.com/javase/1.5.0/docs/guide/security/jsse/JSSERefGuide.html#AppA)。如果没有指定该属性，那么将使用 Java  平台默认的 key manager 算法。 |
+| **provider**  | `String` | 指定创建 `SecureRandom` 生成器的 JCA 提供者的名字。如果没有指定该属性，那么将使用 Java 平台默认的 JSSE 提供者。 |
+
+## 示例
+
+### 使用 JSSE 系统属性
+
