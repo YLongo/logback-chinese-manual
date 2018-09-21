@@ -188,3 +188,15 @@ JSSE 公开 了大量的可配置选项。logback 的 SSL 支持几乎所有这�
 
 ### 使用 JSSE 系统属性
 
+JSEE 系统属性可以用来指定包含服务端 X.509 证书的 keystore 的位置以及密码。或者包含客户端组件验证服务端信任的自签名根 CA 证书的 truststore 的位置以及密码。
+
+#### 指定服务端 keystore
+
+在运行服务端组件时，需要指定包含服务端证书的 keystore 的位置以及密码。一种方法是使用 JSSE 系统属性。下面的例子通过命令行的方式启动 `SimpleSSLSocketServer`：
+
+```shell
+java -DkeyStore=/etc/logback-server-keystore.jks \
+     -DkeyStorePassword=changeit -DkeyStoreType=JKS \
+     ch.qos.logback.net.SimpleSSLSocketServer 6000 /etc/logback-server-config.xml
+```
+
