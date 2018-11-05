@@ -200,3 +200,260 @@ java -DkeyStore=/etc/logback-server-keystore.jks \
      ch.qos.logback.net.SimpleSSLSocketServer 6000 /etc/logback-server-config.xml
 ```
 
+注意，在使用 JSSE *keyStore* 系统属性时，指定了 keystore 的路径。在指定了 *logback.xml* 的路径时，keystore 的 URL 被指定。
+
+虽然这个示例启动了一个提供 logback 的单机服务端应用，但是同样的系统属性可以在任何使用支持 SSL 的 logback 服务端组件上指定并启动。
+
+#### 指定客户端 truststore
+
+当使用客户端组件时，需要指定包含根 CA 证书的 truststore 的位置与密码，用于验证服务端的信任。一种方式是通过使用 JSSE 系统属性。下面的示例通过命令行启动一个名为 `com.example.MyLoggingApplication` 的应用，该应用使用一个或多个支持 SSL 的 logback 客户端组件。
+
+```shell
+java -DtrustStore=/etc/logback-client-truststore.jks \
+     -DtrustStorePassword=changeit -DtrustStoreType=JKS \
+     com.example.MyLoggingApplication
+```
+
+注意，在使用 JSSE *trustStore* 系统属性时，指定了 truststore 的路径。在指定了 *logback.xml* 的路径时，truststore 的 URL 被指定。
+
+### 创建以及使用自签名的服务端组件证书
+
+为了生成自签名的证书，可以使用 JRE 自带的 *keytool* 工具。下面的指令在服务端组件的 keystore 中创建一个自签名的 X.509	证书。以及创建在客户端组件中使用的 truststore。
+
+#### 创建服务端组件证书
+
+下面的命令在一个名为 *server.keystore* 的文件中生成自签名客户端证书。
+
+```shell
+keytool -genkey -alias server -dname "CN=my-logging-server" \
+    -keyalg RSA -validity 365 -keystore server.keystore
+Enter keystore password: <Enter password of your choosing>
+Re-enter new password: <Re-enter same password>
+Enter key password for <my-logging-server>
+	(RETURN if same as keystore password):  <Press RETURN>
+```
+
+在 *dname* 中使用的名字 *my-logging-server* 可以是任何你选择的有效的名字。你可能想要使用服务端主机上的全限定名。*validity* 参数可以指定从当前日期开始直到证书过期的天数。
+
+在实际的设置中，为包含服务端证书的 keystore 选择一个强密码是非常重要的。密码用来保护服务端的密码，防止被已授权方使用。记下刚才设置的密码，因为在接下来配置服务端的时候需要使用。
+
+#### 为客户端组件创建 truststore
+
+由于要配置客户端组件，在前一个步骤中创建的服务端证书需要从 keystore 中导出，并且导入到 truststore 中。下面的命令将会导出证书并且导入到名为 *server.truststore* 的 truststore。
+
+```shell
+keytool -export -rfc -alias server -keystore server.keystore \
+    -file server.crt
+Enter keystore password: <Enter password you chose for in previous step>
+
+keytool -import -alias server -file server.crt -keystore server.truststore
+Enter keystore password: <Enter password of your choosing>
+Re-enter new password: <Re-enter same password>
+Owner: CN=my-logging-server
+Issuer: CN=my-logging-server
+Serial number: 6e7eea40
+Valid from: Sun Mar 31 07:57:29 EDT 2013 until: Mon Mar 31 07:57:29 EDT 2014
+
+   ...
+
+Trust this certificate? [no]:  <Enter "yes">
+```
+
+第一个命令从 keystore 中导出服务端证书 (但是不是服务端密钥) 到一个名为 *server.crt* 的文件。第二个步骤创建一个名为 *server.truststore*，包含服务端证书的新的 truststore。
+
+在实际的设置中，为 truststore 选择一个不同于服务端 keystore 的强密码非常的重要。记住这个密码，因为在配置客户端 appender 时需要使用。
+
+#### 配置服务端组件
+
+拷贝 *server.keystore* 到你的服务端应用的配置中。keystore 可以放在应用的类路径下，或者放在服务器主机文件系统的某个位置。在配置文件中指定 keystore 位置 URL 时，可以使用 `classpath:` 或者 `file:`。一个示例的服务端配置如下：
+
+```xml
+<configuration debug="true">
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+  
+  <root level="DEBUG">
+    <appender-ref ref="CONSOLE" />
+  </root>
+
+  <server class="ch.qos.logback.classic.net.server.SSLServerSocketReceiver">
+    <ssl>
+      <keyStore>
+        <location>classpath:server.keystore</location>
+        <password>${server.keystore.password}</password>
+      </keyStore>
+    </ssl>
+  </server>
+</configuration>
+```
+
+示例假设 keystore 放在应用类路径的根路径下。
+
+配置文件中使用 *server.keystore.password* 替换符指定 keystore 的密码。这种方式可以避免将密码直接存储在配置文件中。例如，在启动的时候，你的应用可能会在控制台提示密码，之后在配置日志系统之前使用输入的密码将 *server.keystore.password* 设置为系统属性。
+
+#### 配置客户端组件
+
+你需要将 *server.truststore* 文件拷贝到使用支持 SSL 组件充当客户端角色的每个应用的配置中。truststore 可以放置在应用的类路径下，或者文件系统的某个地方。可以通过 `classpath:` 或者 `file:` 来指定 truststore 位置的 URL。客户端 appender 的配置示例如下：
+
+> Example:
+
+```xml
+<configuration debug="true">
+  <appender name="SOCKET" class="ch.qos.logback.classic.net.SSLSocketAppender">
+    <remoteHost>${host}</remoteHost>
+    <ssl>
+      <trustStore>
+        <location>classpath:server.truststore</location>
+        <password>${server.truststore.password}</password>
+      </trustStore>
+    </ssl>
+  </appender>
+
+  <root level="DEBUG">
+    <appender-ref ref="SOCKET" />
+  </root>
+</configuration>
+```
+
+示例中假设 truststore 位于应用类路径的根路径下。
+
+配置中使用 *server.truststore.password* 替换符来指定 truststore 的密码。这种方式可以避免直接将密码存储在配置文件中。例如，应用启动时会在控制台提示密码，之后可以在配置日志系统之前通过输入密码将 *server.truststore.password* 设置为系统属性。
+
+## 审核 SSL 配置
+
+在需要安全通行的设置中，经常需要审核组件的 SSL 配置，验证与本地策略的一致性。在 logback 初始化时，logback 中的 SSL 通过提供 SSL 配置的详细日志来满足这一需求。可以在配置中使用 `debug` 属性来开启这个功能。
+
+```xml
+<configuration debug="true">
+  
+  ...
+  
+</configuration>
+```
+
+当使用了 debug 属性，在日志系统初始化时，所有与 SSL 配置产生的相关信息都会被打印出来。一个典型的示例如下：
+
+> Example: 
+
+```java
+06:46:31,941 |-INFO in SSLServerSocketReceiver@4ef18d37 - SSL protocol 'SSL' provider 'SunJSSE version 1.6'
+06:46:31,967 |-INFO in SSLServerSocketReceiver@4ef18d37 - key store of type 'JKS' provider 'SUN version 1.6': file:src/main/java/chapters/appenders/socket/ssl/keystore.jks
+06:46:31,967 |-INFO in SSLServerSocketReceiver@4ef18d37 - key manager algorithm 'SunX509' provider 'SunJSSE version 1.6'
+06:46:31,973 |-INFO in SSLServerSocketReceiver@4ef18d37 - secure random algorithm 'SHA1PRNG' provider 'SUN version 1.6'
+06:46:32,755 |-INFO in SSLParametersConfiguration@4a6f19d5 - enabled protocol: SSLv2Hello
+06:46:32,755 |-INFO in SSLParametersConfiguration@4a6f19d5 - enabled protocol: SSLv3
+06:46:32,755 |-INFO in SSLParametersConfiguration@4a6f19d5 - enabled protocol: TLSv1
+06:46:32,756 |-INFO in SSLParametersConfiguration@4a6f19d5 - enabled cipher suite: SSL_RSA_WITH_RC4_128_MD5
+06:46:32,756 |-INFO in SSLParametersConfiguration@4a6f19d5 - enabled cipher suite: SSL_RSA_WITH_RC4_128_SHA
+06:46:32,756 |-INFO in SSLParametersConfiguration@4a6f19d5 - enabled cipher suite: TLS_RSA_WITH_AES_256_CBC_SHA
+```
+
+为了简便起见，这里的输出被截断了一部分。但是包含了协议、提供者、算法、密码套件以及在配置中所使用的 keystore 与 truststore 位置。
+
+虽然没有一个审核日志是敏感的，但是为了安全，在实际的设置中，在配置被验证之后，日志信息不应该被启用。将 `debug` 属性移除，或者设置为 `false`，将禁用日志审核。
+
+## 解决 SSL 异常
+
+当 SSL 配置错误时，普遍的结果是客户端与服务端组件不能正常的通常。当客户端尝试连接服务端时，这个问题通常会被双方抛出的异常表现出来。
+
+异常消息内容的不容取决于你查看的是客户端的日志还是服务端的日志。最主要的原因是在会话期间，错误报告受限制于内部的协议。由于这种情况，为了定位会话问题，需要查看客户端与服务端的日志。
+
+### Server's Certificate is Not Available
+
+当启动服务端组件时，你会在日志中看到如下的异常：
+
+*javax.net.ssl.SSLException: No available certificate or key corresponds to the SSL cipher suites which are enabled*
+
+大部分情况下表示你没有配置包含服务端密钥的 keystore 以及相应的证书。
+
+#### 解决办法
+
+使用 [keystore 系统属性](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#%E6%9C%8D%E5%8A%A1%E7%AB%AF-key-store-%E9%85%8D%E7%BD%AE%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7) 或者服务端组件 `ssl` 属性中的 [keyStore](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E9%85%8D%E7%BD%AE%E5%B1%9E%E6%80%A7) 属性。你必须指定包含服务端密钥以及证书的 keystore 的路径以及密码。
+
+### Client Does Not Trust the Server
+
+当客户端尝试连接服务端时，在日志中看到如下的异常：
+
+*javax.net.ssl.SSLHandshakeException: sun.security.validator.ValidatorException: PKIX path building failed*
+
+这个问题表示服务端展示的证书，客户端不相信。大部分情况下是使用自签名的证书 (或者服务端证书由你组织内部的认证机构所签名) 并且你还没有配置客户端，导致它引用了包含服务端自签名证书 (或者你的服务器证书是由 CA 签名的受信任的根证书) 的 truststore。
+
+这个问题还会发生在服务端证书过期或者被取消的情况下。在客户端每次尝试进行连接时，你在服务端的日志中会看到如下的异常信息：
+
+*javax.net.ssl.SSLHandshakeException: Received fatal alert: ...*
+
+异常信息的余下部分通常会提供一个代码来表明为什么客户端拒绝服务端证书：
+
+| 代码                  | 描述                                         |
+| --------------------- | -------------------------------------------- |
+| `certificate_unknown` | 通常表示客户端 truststore 没有被正确的配置   |
+| `certificate_expired` | 表示服务端证书已过期，需要更换               |
+| `certificate_revoked` | 表示颁发的 CA 已经撤销了服务端证书，需要更换 |
+
+#### 解决办法
+
+如果服务端日志显示 `certificate_unknown`，那么使用 [truststore 系统属性](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#%E5%AE%A2%E6%88%B7%E7%AB%AF-trust-store-%E9%85%8D%E7%BD%AE%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7) 或者 appender 组件 `ssl` 属性中的  [trustStore](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E9%85%8D%E7%BD%AE%E5%B1%9E%E6%80%A7) 属性，指定包含服务端自签名证书或者颁发的 CA 根证书的 truststore 的路径以及密码。
+
+如果服务端日志显示 `certificate_expired` 或者 `certificate_revoked`，表示服务端需要一个新的证书。新的证书以及相关的密钥需要在服务端配置的 keystore 中更换。并且，如果使用自签名服务端证书，那么还需要更换在客户端 appender 中配置的 truststore 服务端证书。
+
+### Server Does Not Trust the Client
+
+注意：**这个问题仅仅发生在你明确的配置服务端请求客户端证书时。(使用 [needClientAuth](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) 或者 [wantClientAuth](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) 属性)。**
+
+当客户端尝试连接日志服务器时，可以在客户端日志中看到如下的异常信息：
+
+*javax.net.ssl.SSLHandshakeException: Received fatal alert: ...*
+
+异常信息的其余部分会提供一个代码表明为什么服务端拒绝客户端证书。
+
+| 代码                  | 描述                                         |
+| --------------------- | -------------------------------------------- |
+| `certificate_unknown` | 通常表示服务端 truststore 没有正确的配置     |
+| `certificate_expired` | 表示客户端证书已经过期，需要更换             |
+| `certificate_revoked` | 表示颁发的 CA 已经撤销了客户端证书，需要更换 |
+
+#### 解决办法
+
+如果客户端日志信息显示 `bad_certificate`，那么使用 [truststore 系统属性](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#%E5%AE%A2%E6%88%B7%E7%AB%AF-trust-store-%E9%85%8D%E7%BD%AE%E7%9A%84%E7%B3%BB%E7%BB%9F%E5%B1%9E%E6%80%A7) 或者服务端组件 `ssl` 属性中的  [trustStore](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E9%85%8D%E7%BD%AE%E5%B1%9E%E6%80%A7) 属性，指定包含客户端自签名证书或者颁发的 CA 根证书的 truststore 的路径以及密码。
+
+如果服务端日志信息显示 `certificate_expired` 或者 `certificate_revoked`，表示客户端需要一个新的证书。需要更换在客户端配置中指定的 keystore 的新证书以及相应的密钥。
+
+### Client and Server Cannot Agree on a Protocol
+
+注意：**这个问题仅仅只在你的配置中明确的配置了 [excludedProtocols](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) 或者 [includedProtocols](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) SSL 协议时。** 
+
+当客户端尝试连接服务端时，你会在日志中看到如下异常信息：
+
+*javax.net.ssl.SSLHandshakeException: Received fatal alert: handshake_failure*
+
+服务端的日志信息通常更加详细，例如：
+
+*javax.net.ssl.SSLHandshakeException: SSLv2Hello is disabled*
+
+通常，表示你已经排除其中的一个协议。
+
+#### 解决办法
+
+检查服务端与客户端指定的 [excludedProtocols](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) 以及 [includedProtocols](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) 属性的值。
+
+### Client and Server Cannot Agree on a Cipher Suite
+
+注意：**通常这个问题只发生在你明确的在配置文件中指定了 [excludedCipherSuites](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) 或者 [includedCipherSuites](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) SSL 密码套件时。**
+
+当客户端尝试去连接服务端时，你会在日志中看到如下的异常信息：
+
+*javax.net.ssl.SSLHandshakeException: Received fatal alert: handshake_failure*
+
+服务端的日志信息通常会更加详细：
+
+*javax.net.ssl.SSLHandshakeException: no cipher suites in common*
+
+这意味着你已经在服务端与客户端配置了密码套件，但是它们各自密码套件的交集为空。
+
+#### 解决办法
+
+检查服务端与客户端指定的 [excludedCipherSuites](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) 以及 [includedCipherSuites](https://github.com/Volong/logback-chinese-manual/blob/master/15%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%EF%BC%9A%E4%BD%BF%E7%94%A8%20SSL.md#ssl-%E5%8F%82%E6%95%B0%E9%85%8D%E7%BD%AE) 属性的值。
+
