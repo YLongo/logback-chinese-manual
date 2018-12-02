@@ -47,5 +47,8 @@ logback 手册尽可能详细的描述了 logback API，包括它的特性以及
 
 ![](images/log.png)
 
-> 图片来源：[日志系统诞生记](https://mp.weixin.qq.com/s/Fxurcbgu061f6JM1JyvFIw)
+> 图片来源：[日志系统诞生记](https://mp.weixin.qq.com/s/Fxurcbgu061f6JM1JyvFIw)  
 
+推荐阅读：
+1. [日志系统诞生记](https://mp.weixin.qq.com/s/Fxurcbgu061f6JM1JyvFIw)
+2. [架构师必备，带你弄清混乱的JAVA日志体系！](https://mp.weixin.qq.com/s/8VvBdRH_Yc-Dt4HFGbC5rg)
