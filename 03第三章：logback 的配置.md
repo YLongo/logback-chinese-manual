@@ -495,7 +495,7 @@ logback 的配置文件非常的灵活，不需要指定 DTD 或者 xml 文件�
 
 #### 配置 logger
 
-现在你至少应该对[等级继承规则](#有效等级又称为等级继承)与[基本规则](方法打印以及基本选择规则) 有所了解.。
+现在你至少应该对[等级继承规则](#有效等级又称为等级继承)与[基本规则](https://github.com/Volong/logback-chinese-manual/blob/0197a2d5a3820d9c1756c680c2e21e934904c6a6/02%E7%AC%AC%E4%BA%8C%E7%AB%A0%EF%BC%9A%E6%9E%B6%E6%9E%84.md#%E6%96%B9%E6%B3%95%E6%89%93%E5%8D%B0%E4%BB%A5%E5%8F%8A%E5%9F%BA%E6%9C%AC%E9%80%89%E6%8B%A9%E8%A7%84%E5%88%99)有所了解.。
 
 通过 `<logger>` 标签来过 logger 进行配置，一个 `<logger>` 标签必须包含一个 *name* 属性，一个可选的 *level* 属性，一个可选 *additivity* 属性。`additivity` 的值为 *true* 或 *false*。`level` 的值为 TRACE，DEBUG，INFO，WARN，ERROR，ALL，OFF，INHERITED，NULL。当 `level` 的值为 INHERITED 或 NULL 时，将会强制 logger 继承上一层的级别。
 
@@ -583,7 +583,7 @@ root logger 通过 `<root>` 元素来进行配置。它只支持一个属性—�
 
 > 注意：root logger 的日志级别永远不会设置成一个非空的值，默认是 DEBUG。
 
-[基本选择法](#方法打印以及基本选择规则) 依赖被调用 logger 的有效日志级别，而并不是 appender 所依附的 logger 的级别。logback 会首先判断日志语句是否可以被打印，如果可以，则会在 logger 的层级结构中查找 appender，而不管它们的级别如何（表示很费解，appender 本来就没有日志级别，为什么会关 appender 的事？）。下面的例子说明了这一点。
+[基本选择法](https://github.com/Volong/logback-chinese-manual/blob/0197a2d5a3820d9c1756c680c2e21e934904c6a6/02%E7%AC%AC%E4%BA%8C%E7%AB%A0%EF%BC%9A%E6%9E%B6%E6%9E%84.md#%E6%96%B9%E6%B3%95%E6%89%93%E5%8D%B0%E4%BB%A5%E5%8F%8A%E5%9F%BA%E6%9C%AC%E9%80%89%E6%8B%A9%E8%A7%84%E5%88%99) 依赖被调用 logger 的有效日志级别，而并不是 appender 所依附的 logger 的级别。logback 会首先判断日志语句是否可以被打印，如果可以，则会在 logger 的层级结构中查找 appender，而不管它们的级别如何（表示很费解，appender 本来就没有日志级别，为什么会关 appender 的事？）。下面的例子说明了这一点。
 
 *Example*：sample4.xml
 
