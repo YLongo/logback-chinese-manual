@@ -679,7 +679,7 @@ java chapters.layouts.SampleLogging src/main/java/chapters/layouts/mySampleConve
 
 
 
-表格的列是通过转换模式指定的。关于转换模式的文档请查看 [PatternLayout](https://github.com/Volong/logback-chinese-manual/blob/master/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayout.md#patternlayout)。所以，你可以完全控制表格的内容以及格式。你可以选择并且展示任何跟 `PatternLayout` 组合的转换器。
+表格的列是通过转换模式指定的。关于转换模式的文档请查看 [PatternLayout](https://github.com/Volong/logback-chinese-manual/blob/34f5a61965088f0fa6d0d2a7e0e7085160e95201/06%E7%AC%AC%E5%85%AD%E7%AB%A0%EF%BC%9ALayouts.md#patternlayout)。所以，你可以完全控制表格的内容以及格式。你可以选择并且展示任何跟 `PatternLayout` 组合的转换器。
 
 一个值得注意的问题是使用 `PatternLayout` 中的 `HTMLLayout` 时，不要使用空格或者其它的字面量来分隔转换说明符。转换模式中的每个说明符都会被当做一个单独的列。同样的转换模式中的每个文本块也会被当作一个单独的列，这会占用屏幕的空间。
 
