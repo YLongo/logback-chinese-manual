@@ -2,6 +2,8 @@
 logback 中文手册
 > 翻译自 [The logback manual](https://logback.qos.ch/manual/index.html)  
 
+[在线地址](https://logbackcn.gitbook.io/logback/)  
+
 ## 简介
 
 Logback 继承自 log4j。
