@@ -18,7 +18,7 @@
 
 如果你使用的是 maven，你可以在 *src/test/resources* 下新建 logback-test.xml。maven 会确保它不会被生成。所以你可以在测试环境中给配置文件命名为 *logback-test.xml*，在生产环境中命名为 *logback.xml*。
 
-`FAST START-UP` Joran 解析给定的配置文件大概需要耗费 100 毫秒。为了减少启动的世间安，你可以使用 [ServiceLoader](https://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html) 来加载自定义的 `Configurator`，并使用 [BasicConfigurator](https://logback.qos.ch/xref/ch/qos/logback/classic/BasicConfigurator.html) 作为一个好的起点（个人的理解是通过继承这个类）。
+`FAST START-UP` Joran 解析给定的配置文件大概需要耗费 100 毫秒。为了减少启动的时间，你可以使用 [ServiceLoader](https://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html) 来加载自定义的 `Configurator`，并使用 [BasicConfigurator](https://logback.qos.ch/xref/ch/qos/logback/classic/BasicConfigurator.html) 作为一个好的起点（个人的理解是通过继承这个类）。
 
 ### 自动配置 logback
 
