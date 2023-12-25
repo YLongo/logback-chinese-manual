@@ -442,7 +442,7 @@ loggerContext.stop();
 
 在 web 应用中，为了停止 logback-classic 并释放相关资源，上面的代码可以在 `ServletContextListener` 类的 [contextDestroyed](https://docs.oracle.com/javaee/6/api/javax/servlet/ServletContextListener.html#contextDestroyed(javax.servlet.ServletContextEvent)) 方法中被调用。从版本 1.1.10 开始，相应的 `ServletContextListener` 会被自动安装。
 
-#### 通过 shutddown hook 停止 logback-classic
+#### 通过 shutdown hook 停止 logback-classic
 
 > 个人觉得 hook 可以理解为钩子或者开关，但是还是觉得照写会更好理解一点。
 
