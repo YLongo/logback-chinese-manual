@@ -440,7 +440,7 @@ LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 loggerContext.stop();
 ```
 
-上面的代码在 web 应用中，通过调用 `ServletContextListener` 的 [contextDestroyed](http://docs.oracle.com/javaee/6/api/javax/servlet/ServletContextListener.html#contextDestroyed(javax.servlet.ServletContextEvent)) 方法来停止 logback-classic 并释放资源。1.1.10 版本后，`ServletContextListener` 会被自动加载。
+在 web 应用中，为了停止 logback-classic 并释放相关资源，上面的代码可以在 `ServletContextListener` 类的 [contextDestroyed](https://docs.oracle.com/javaee/6/api/javax/servlet/ServletContextListener.html#contextDestroyed(javax.servlet.ServletContextEvent)) 方法中被调用。从版本 1.1.10 开始，相应的 `ServletContextListener` 会被自动安装。
 
 #### 通过 shutddown hook 停止 logback-classic
 
