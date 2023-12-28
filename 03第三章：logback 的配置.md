@@ -623,17 +623,13 @@ ConsoleAppender 的名字为 *STDOUT*， *sample4.xml* 中唯一的 appender，�
 
 #### 配置 appender
 
-appender 通过 `<appender>` 元素进行配置，需要两个强制的属性 *name* 与 *class*。*name* 属性用来指定 appender 的名字，*class* 属性需要指定类的全限定名用于实例化。`<appender>` 元素可以包含 0 或一个 `<layout>` 元素，0 或多个 `<encoder>` 元素，0 或多个 `<filter>` 元素。除了这些公共的元素之外，`<appender>` 元素可以包含任意与 appender 类的 JavaBean 属性相一致的元素。
-
-下图展示了一些常见的结构。
-
-> 注意：对属性的支持不可见（没懂这句话是什么意思）。
+appender 通过 `<appender>` 元素进行配置，需要两个强制的属性 *name* 与 *class*。*name* 属性用来指定 appender 的名字，*class* 属性指定类的全限定名用于实例化。`<appender>` 元素可以包含 0 或一个 `<layout>` 元素，0 或多个 `<encoder>` 元素，0 或多个 `<filter>` 元素。除了这三个公共的元素之外，`<appender>` 元素可以包含任意与 appender 类的 JavaBean 属性相一致的元素。无缝地支持一个给定的 logback 组件的任意属性是 Joran 的主要优势之一，这将在后面的章节中讨论。下图展示了公共结构。注意：下图没有显示对 JavaBean 属性的支持。
 
 ![appenderSyntax](/images/appenderSyntax.png)
 
-`<layout>` 元素强制一个 class 属性去指定一个类的全限定名，用于实例化。与 `<appender>` 元素一样，`<layout>` 元素也可以包含与 layout 实例相关的属性。如果 layout 的 class 是 `PatternLayout`，那么 class 属性可以被隐藏掉（参考：[默认类映射](#默认类映射)），因为这个很常见。.
+`<layout>` 元素需要一个强制的 class 属性去指定一个类的全限定名，用于实例化。与 `<appender>` 元素一样，`<layout>` 元素也可以包含与 layout 实例相关的属性。一个常见的使用场景是：layout 的 class 属性被设置为 `PatternLayout`，如果是这种场景的话，class 属性可以省略（参考：[默认类映射](#默认类映射)）。
 
-`<encoder` 元素强制一个 class 属性去指定一个类的全限定名，用于实例化。如果 encoder 的 class 是 `PatternLayoutEncoder`，那么基于[默认类映射](#默认类映射)，class 属性可以被隐藏。 
+`<encoder>` 元素需要一个强制的 class 属性去指定一个类的全限定名，用于实例化。一个常见的使用场景是：encoder 的 class 属性被设置为 `PatternLayoutEncoder`，如果是这种场景的话，class 属性可以省略（参考：[默认类映射](#默认类映射)）。
 
 通过多个 appender 输出日志就像定义多个 appender 以及将它们关联到 logger 上一样简单。
 
